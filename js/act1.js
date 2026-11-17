@@ -146,6 +146,7 @@ export class Act1 {
     this.inv(); this.ui.matches(s0.hasBox ? s0.matches : null, 0); this.objective();
     this.ui.say(s0.blocked ? "আবার সেই ঘর। ফোকরটা বন্ধ করে দিয়েছে… কিন্তু স্ক্রু-ড্রাইভারটা টের পায়নি।" : "মাথাটা ঝিমঝিম করছে… কোথায় আমি? চারদিক ঘুটঘুটে অন্ধকার।", 6);
     this.game.save({ act: 1 });
+    if (!s0.blocked) this.ui.tip("মাউস ঘুরিয়ে চারপাশ দেখুন · WASD দিয়ে হাঁটুন · কোনো জিনিসের কাছে গিয়ে তাকালে [E] লেখা ভেসে উঠবে", 14);
   }
 
   objective() {
@@ -164,14 +165,14 @@ export class Act1 {
   takeBox() {
     const s = this.st; s.hasBox = true; s.matches = 5; this.matchbox.visible = false; this.audio.click();
     this.ui.say("একটা দেশলাইয়ের বাক্স! ভেতরে মাত্র পাঁচটা কাঠি। হিসাব করে খরচ করতে হবে।", 6);
-    this.ui.matches(5, 0); s.next = 40; this.inv(); this.objective();
+    this.ui.matches(5, 0); s.next = 40; this.ui.tip("F = কাঠি জ্বালানো / নিভিয়ে ফেলা। প্রতিটা কাঠি অল্প সময় জ্বলে", 10); this.inv(); this.objective();
   }
   toggleMatch() {
     const s = this.st; if (s.over || !s.hasBox) { if (!s.hasBox) this.ui.say("আলো জ্বালানোর মতো কিছু নেই।"); return; }
     if (s.lit) { s.lit = false; s.burn = 0; this.audio.blow(); this.ui.matches(s.matches, 0); return; }
     if (s.matches <= 0) { this.ui.say("কাঠি শেষ। চোখ অন্ধকারে একটু সয়ে এসেছে, আবছা দেখা যাচ্ছে।"); return; }
     if (s.lying) return;
-    s.matches--; s.lit = true; s.burn = 15; this.audio.match();
+    s.matches--; s.lit = true; s.burn = s.burnMax = 15 / this.game.diff; this.audio.match();
     if (!s.everLit) { s.everLit = true; this.objective(); }
   }
   tryCode(c) {
@@ -229,7 +230,7 @@ export class Act1 {
     // match
     if (s.lit) {
       s.burn -= dt; if (s.burn <= 0) { s.lit = false; this.ui.say(s.matches ? "কাঠিটা পুড়ে শেষ।" : "শেষ কাঠিটাও পুড়ে গেল…"); }
-      this.ui.matches(s.matches, Math.max(0, s.burn / 15));
+      this.ui.matches(s.matches, Math.max(0, s.burn / s.burnMax));
     }
     const fl = s.lit ? (0.75 + Math.random() * 0.25) * Math.min(1, s.burn / 1.2) * 3.0 : 0;
     this.flame.intensity += (fl - this.flame.intensity) * Math.min(1, dt * 14);
@@ -238,6 +239,11 @@ export class Act1 {
     this.ui.flame(s.lit);
 
     s.dark = s.lit ? Math.max(0, (s.dark || 0) - dt * 0.3) : Math.min(1, (s.dark || 0) + dt / 80); this.fear = Math.max(s.dark, s.ev !== "idle" ? 0.95 : 0);
+    if (s.hasBox && !s.cupOpen && !s.blocked) {       // escalating hints so nobody gets stuck on the mirror puzzle
+      s.hintT = (s.hintT || 0) + dt;
+      if (s.hintT > 50 && !s.h1) { s.h1 = 1; this.ui.tip("ইঙ্গিত: দেয়ালের লাল লেখাটা উল্টো। উল্টো লেখা সোজা দেখায় কোথায়?", 12); }
+      if (s.hintT > 110 && !s.h2) { s.h2 = 1; this.ui.objective("আয়নার সামনে দাঁড়িয়ে কাঠি জ্বালান: আয়নার ভেতরে পেছনের দেয়ালের ৪টা সংখ্যা পড়ুন, তারপর আলমারিতে গিয়ে E চেপে বসান"); }
+    }
     // cupboard door swing
     const want = s.cupOpen ? -1.9 : 0; this.cupDoor.rotation.y += (want - this.cupDoor.rotation.y) * Math.min(1, dt * 3);
 

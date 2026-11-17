@@ -65,12 +65,19 @@ function tex(base, vary) {
   for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? "0,0,0" : "255,255,255"},${Math.random() * vary})`; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-export function figure(color) {
-  const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color });
-  const add = (w, h, d, y) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.y = y; g.add(o); };
-  add(0.46, 0.75, 0.26, 1.15); add(0.4, 0.8, 0.24, 0.4);
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 6), new THREE.MeshLambertMaterial({ color: 0x6b4a36 })); head.position.y = 1.68; g.add(head);
+export function figure(color, skin = 0x6b4a36) {
+  const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color }), dark = new THREE.MeshLambertMaterial({ color: new THREE.Color(color).multiplyScalar(0.55) }), sk = new THREE.MeshLambertMaterial({ color: skin });
+  const part = (w, h, d, mat, x, y, z, parent = g) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat); o.position.set(x, y, z); parent.add(o); return o; };
+  part(0.46, 0.62, 0.26, m, 0, 1.2, 0);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 6), sk); head.position.y = 1.68; g.add(head); part(0.26, 0.1, 0.27, dark, 0, 1.79, -0.01);
+  const limb = (x, y, w, h, d, mat) => { const piv = new THREE.Group(); piv.position.set(x, y, 0); g.add(piv); part(w, h, d, mat, 0, -h / 2, 0, piv); return piv; };
+  g.userData.limbs = [limb(-0.12, 0.89, 0.18, 0.89, 0.2, dark), limb(0.12, 0.89, 0.18, 0.89, 0.2, dark), limb(-0.3, 1.48, 0.12, 0.6, 0.14, m), limb(0.3, 1.48, 0.12, 0.6, 0.14, m)];
+  part(0.1, 0.1, 0.1, sk, 0, -0.62, 0, g.userData.limbs[2]); part(0.1, 0.1, 0.1, sk, 0, -0.62, 0, g.userData.limbs[3]);
   return g;
+}
+export function walkAnim(f, phase, amt) {
+  const [a, b, c, d] = f.userData.limbs, s = Math.sin(phase) * 0.7 * amt;
+  a.rotation.x = s; b.rotation.x = -s; c.rotation.x = -s * 0.8; d.rotation.x = s * 0.8;
 }
 
 export class Act2 {
@@ -123,6 +130,14 @@ export class Act2 {
     this.pris = figure(0x8a8068); s.add(this.pris);
     this.flame = new THREE.PointLight(0xffa040, 0, 12, 1.2); s.add(this.flame);
 
+
+    // notes left behind by earlier prisoners
+    [[6, 2, "দেয়ালের কোণে গোঁজা কাগজ:\n“আজ এগারো দিন। ওরা বলে কেউ আমার খোঁজ করছে না। মা, আমি বেঁচে আছি। — সজীব, মিরপুর ১১”"],
+     [2, 10, "ছেঁড়া খবরের কাগজের টুকরো:\n“মিরপুরে এক মাসে তিন তরুণ নিখোঁজ, থানায় জিডি নিতে গড়িমসির অভিযোগ…”\nপাশে কলমে লেখা: ‘ওসি সাব দেইখা নিবেন’"],
+     [11, 10, "টেবিলের নিচে পড়ে থাকা রসিদ:\n“পিকআপ ভাড়া: রাত ১টা–৪টা। মাল: ১ জন। জমা: রফিক।”"]].forEach(([i, j, text]) => {
+      const c = ctr(i, j), pm = new THREE.Mesh(new THREE.PlaneGeometry(0.22, 0.3), L({ color: 0xd8d2c0 })); pm.rotation.x = -Math.PI / 2; pm.rotation.z = i; pm.position.set(c.x + 0.3, 0.02, c.z - 0.3); s.add(pm);
+      this.items.push({ pos: new THREE.Vector3(c.x + 0.3, 0.1, c.z - 0.3), range: 1.9, dot: 0.5, label: () => "কাগজটা পড়ুন", act: () => P.ui.choice("চিরকুট", text, [["রেখে দিন", () => {}]]) });
+    });
     const near = ch => { const c = ctr(...this.spots[ch]); c.y = 1.0; return c; };
     this.items.push(
       { pos: near("O"), range: 1.8, label: () => P.st.ledger ? null : "হিসাবের খাতাটা নিন", act: () => P.takeLedger() },
@@ -146,6 +161,7 @@ export class Act2 {
     this.camera.near = 0.05; this.camera.updateProjectionMatrix(); this.audio.outdoor = false;
     this.inv(); this.objective(); this.ui.matches(gs.matches, 0);
     this.ui.say("ফোকর পেরিয়ে একটা অন্ধকার ঘর। বাড়ির ভেতরে টর্চ হাতে কেউ ঘুরছে। শব্দ করা যাবে না।", 7);
+    this.ui.tip("C = নিচু হয়ে নিঃশব্দে চলা · Shift = দৌড় (অনেক শব্দ) · আলমারি বা খাটের কাছে E = লুকানো · টর্চের আলো থেকে দূরে থাকুন", 14);
     this.game.save({ act: 2 });
   }
   objective() {
@@ -195,7 +211,7 @@ export class Act2 {
     const s = this.st, gs = this.game.state; if (!s || s.over) return;
     if (code === "KeyF") {
       if (s.lit) { s.lit = false; this.audio.blow(); }
-      else if (s.hidden) return; else if (gs.matches > 0) { gs.matches--; s.lit = true; s.burn = 15; this.audio.match(); } else this.ui.say("দেশলাইয়ের কাঠি শেষ।");
+      else if (s.hidden) return; else if (gs.matches > 0) { gs.matches--; s.lit = true; s.burn = 15 / this.game.diff; this.audio.match(); } else this.ui.say("দেশলাইয়ের কাঠি শেষ।");
     }
     if (code === "KeyE") {
       if (s.hidden) { if (!s.hidden.bad) { this.player.pos.x = s.hidden.back.x; this.player.pos.z = s.hidden.back.z; } s.hidden = null; this.player.enabled = true; }
@@ -216,7 +232,7 @@ export class Act2 {
     const moving = p.speed > 0.3;
     if (s.follow && !s.over) {
       if (!s.trail.length || Math.hypot(s.trail[s.trail.length - 1].x - p.pos.x, s.trail[s.trail.length - 1].z - p.pos.z) > 0.4) s.trail.push({ x: p.pos.x, z: p.pos.z });
-      while (s.trail.length > 4) { const t = s.trail[0], d = Math.hypot(t.x - this.pris.position.x, t.z - this.pris.position.z); if (d < 0.15) s.trail.shift(); else { const st = Math.min(d, 4.5 * dt); this.pris.position.x += (t.x - this.pris.position.x) / d * st; this.pris.position.z += (t.z - this.pris.position.z) / d * st; break; } }
+      while (s.trail.length > 4) { const t = s.trail[0], d = Math.hypot(t.x - this.pris.position.x, t.z - this.pris.position.z); if (d < 0.15) s.trail.shift(); else { const st = Math.min(d, 4.5 * dt); this.pris.position.x += (t.x - this.pris.position.x) / d * st; this.pris.position.z += (t.z - this.pris.position.z) / d * st; this.pris.rotation.y = Math.atan2(t.x - this.pris.position.x, t.z - this.pris.position.z); s.pp = (s.pp || 0) + st * 2.6; walkAnim(this.pris, s.pp, 1); break; } }
       this.pris.visible = !s.hidden;
     }
     const noise = s.hidden ? 0 : Math.max(p.noise, s.follow && moving ? 0.45 : 0);
@@ -229,7 +245,7 @@ export class Act2 {
       const range = s.lit ? 14 : p.crouch ? 6 : 10, facing = Math.cos(k.yaw) * dz + Math.sin(k.yaw) * dx;
       const sees = !s.hidden && dist < range && (dist < 1.2 || facing / (dist || 1) > 0.78) && g.los(kp.x, kp.z, p.pos.x, p.pos.z);
       k.sawT = sees ? 0 : k.sawT + dt;
-      s.seen = Math.max(0, Math.min(1, s.seen + (sees ? (dist < 4 ? 2.2 : 1.1) : -0.5) * dt));
+      s.seen = Math.max(0, Math.min(1, s.seen + (sees ? (dist < 4 ? 2.2 : 1.1) * this.game.diff : -0.5) * dt));
       this.ui.bar("seen", k.state === "chase" ? 1 : s.seen, k.state === "chase" ? "সে আপনাকে তাড়া করছে!" : k.state === "suspicious" || k.state === "search" ? "সে কিছু টের পেয়েছে" : "নজর");
       if (s.seen >= 1 && k.state !== "chase") { k.state = "chase"; k.path = []; k.repath = 0; this.audio.thud(0.5); this.ui.say("“অ্যাই! দাঁড়া!”", 2.5); }
       if (s.hidden && s.hidden.bad && dist < 2.2) return this.caught("লুকানোর সময় সে আপনাকে দেখে ফেলেছিল।");
@@ -237,7 +253,7 @@ export class Act2 {
 
       let speed = 1.5, target = null;
       if (k.state === "chase") {
-        speed = 4.3; if (sees) { k.last = { x: p.pos.x, z: p.pos.z }; k.lost = 0; } else if ((k.lost += dt) > 3.5) { k.state = "search"; k.wait = 6; }
+        speed = 4.3 + (this.game.diff - 1) * 2.2; if (sees) { k.last = { x: p.pos.x, z: p.pos.z }; k.lost = 0; } else if ((k.lost += dt) > 3.5) { k.state = "search"; k.wait = 6; }
         target = k.last;
       } else if (k.state === "suspicious" || k.state === "search") {
         speed = 2.3; target = k.last;
@@ -257,9 +273,11 @@ export class Act2 {
         if (gd > 0.05) {
           kp.x += gx / gd * Math.min(gd, speed * dt); kp.z += gz / gd * Math.min(gd, speed * dt);
           let dy = Math.atan2(gx, gz) - k.yaw; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); k.yaw += dy * Math.min(1, dt * 7);
+          k.phase = (k.phase || 0) + dt * speed * 2.4; k.moving = 1;
           if ((k.stepT = (k.stepT || 0) - dt) <= 0) { k.stepT = speed > 3 ? 0.28 : 0.6; this.audio.thud(Math.max(0, 0.22 * (1 - dist / 14))); }
         }
       }
+      walkAnim(this.kid, k.phase || 0, k.moving || 0); k.moving = 0;
       this.kid.rotation.y = k.yaw;
       this.fear = k.state === "chase" ? 1 : Math.max(s.seen, dist < 5 ? 0.7 : 0);
     }

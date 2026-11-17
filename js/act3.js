@@ -1,7 +1,8 @@
 // Intro (the abduction) and Act 3 (Mirpur night: corrupt police patrols, wanted level, allies you may or may not
 // be able to trust, phone tracking, cyber-café upload finale) + the five endings. Both run on the real street map.
 import * as THREE from "three";
-import { figure } from "./act2.js";
+import { figure, walkAnim } from "./act2.js";
+import { rickshawGeo } from "./props.js";
 
 const bn = n => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
 const CREDIT = "\n\nমানচিত্রের তথ্য © OpenStreetMap contributors (ODbL)";
@@ -37,6 +38,29 @@ class Street {      // shared helpers for the two street modes
   los(ax, az, bx, bz) { const d = Math.hypot(bx - ax, bz - az), n = Math.ceil(d / 2.5); for (let k = 1; k < n; k++) { const t = k / n; if (this.collision.blocked(ax + (bx - ax) * t, az + (bz - az) * t)) return false; } return true; }
 }
 
+/** Late-night street life: a few pedestrians and moving rickshaws (decorative only). */
+export class Ambient {
+  constructor(ctx, graph) {
+    this.g = graph.filter(n => Math.hypot(n.x, n.z) < 300 && n.n.length); this.a = []; const root = new THREE.Group(); ctx.scene.add(root);
+    const cols = [0x5a4a3a, 0x3a4a5a, 0x6a5a2a, 0x4a3a4a, 0x2a4a3a, 0x70685a], rm = new THREE.MeshLambertMaterial({ vertexColors: true }), rg = rickshawGeo();
+    for (let i = 0; i < 10; i++) {
+      const rick = i >= 6, m = new THREE.Group(), f = figure(cols[i % cols.length]);
+      if (rick) { m.add(new THREE.Mesh(rg, rm)); f.scale.setScalar(0.92); f.position.set(0, 0.12, 0.3); f.userData.limbs[0].rotation.x = f.userData.limbs[1].rotation.x = -1.0; }
+      m.add(f); root.add(m); const a = this.g[Math.floor(Math.random() * this.g.length)];
+      this.a.push({ m, f, rick, a, b: a.n[0], t: Math.random(), sp: rick ? 3.4 : 1.1 + Math.random() * 0.4, off: rick ? 1.6 : 3.4, ph: Math.random() * 6 });
+    }
+  }
+  update(dt) {
+    for (const o of this.a) {
+      const dx = o.b.x - o.a.x, dz = o.b.z - o.a.z, len = Math.hypot(dx, dz) || 1; o.t += o.sp * dt / len;
+      if (o.t >= 1) { const prev = o.a; o.a = o.b; o.t = 0; let opts = o.a.n.filter(n => n !== prev && Math.hypot(n.x, n.z) < 310); if (!opts.length) opts = [prev]; o.b = opts[Math.floor(Math.random() * opts.length)]; continue; }
+      o.m.position.set(o.a.x + dx * o.t - dz / len * o.off, o.rick ? 0.16 : 0.08, o.a.z + dz * o.t + dx / len * o.off);
+      let dy = Math.atan2(dx, dz) - o.m.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy)); o.m.rotation.y += dy * Math.min(1, dt * 4);
+      if (!o.rick) { o.ph += dt * o.sp * 3.2; walkAnim(o.f, o.ph, 0.8); }
+    }
+  }
+}
+
 export class Intro extends Street {
   constructor(ctx) {
     super(ctx);
@@ -49,7 +73,8 @@ export class Intro extends Street {
     this.player.crouch = false; const k = 1 + 55 / Math.hypot(d.spawn.x, d.spawn.z); this.player.teleport(d.spawn.x * k, d.spawn.z * k, Math.atan2(d.spawn.x, d.spawn.z)); this.collision.resolve(this.player.pos, 0.4); this.player.enabled = true;
     this.t = 0; this.phase = 0; this.ui.inventory([]);
     this.ui.objective("বাসায় ফিরুন। গোলচত্বর পেরিয়ে সোজা");
-    this.ui.say("রাত দুইটা সতেরো। টিউশনি থেকে ফিরতে আজ বড্ড দেরি হয়ে গেল। রাস্তা একদম ফাঁকা।", 6);
+    this.ui.say("রাত দুইটা সতেরো। টিউশনি থেকে ফিরতে আজ বড্ড দেরি হয়ে গেল। রাস্তা প্রায় ফাঁকা।", 6);
+    this.ui.tip("W A S D = হাঁটা · মাউস = চারপাশ দেখা · Shift = দৌড় · M = মানচিত্র", 12);
   }
   update(dt) {
     const p = this.player, P = this.pickup.position; this.t += dt; this.world.update(dt, this.camera); this.game.landmarks();
@@ -113,6 +138,10 @@ export class Act3 extends Street {
       { pos: new THREE.Vector3(this.cafe.x, 1.3, this.cafe.z), range: 3.2, label: () => "সাইবার ক্যাফেতে ঢুকে আপলোড শুরু করুন", act: () => P.enterCafe() },
       { pos: new THREE.Vector3(this.salon.x, 1.3, this.salon.z), range: 3, label: () => P.game.state.clues.c ? null : "সেলুনের কাচের দরজায় আয়নাটা দেখুন",
         act: () => { P.game.state.clues.c = 1; P.ui.say("স্ট্রিট লাইটের আলোয় আয়নার ধুলোয় আঙুলে লেখা একটা নাম: “রফিক”", 6); } }];
+    const HN = { tea: "চায়ের দোকানের পেছনে লুকান", cng: "সিএনজির আড়ালে লুকান", van: "ভ্যানের নিচে লুকান", rickshaw: "রিকশার আড়ালে লুকান" };
+    for (const pr of d.props) this.items.push({ pos: new THREE.Vector3(pr.x, 0.9, pr.z), range: 2.4, label: () => HN[pr.k], act: () => P.hide() });
+    this.marks = [{ x: this.cafe.x, z: this.cafe.z, t: "সাইবার ক্যাফে", c: "#a01010", cross: true }, { x: this.startPos.x, z: this.startPos.z, t: "যে বাড়ি থেকে পালিয়েছেন", c: "#444" },
+      { x: tea.x, z: tea.z, t: "মামার চায়ের দোকান", c: "#444" }, { x: rk.x, z: rk.z, t: "রিকশা স্ট্যান্ড", c: "#444" }];
   }
 
   start() {
@@ -123,6 +152,12 @@ export class Act3 extends Street {
     this.player.crouch = false; this.player.teleport(this.startPos.x, this.startPos.z, Math.atan2(this.startPos.x, this.startPos.z) + Math.PI * 0); this.player.pitch = 0; this.player.enabled = true;
     this.inv(); this.objective(); this.game.save({ act: 3 });
     this.ui.say("মিরপুরের রাস্তা। নীল জিপগুলো টহল দিচ্ছে, ওরা ওদেরই লোক। হেডলাইটের আলোয় পড়া যাবে না। গলি দিয়ে চলুন।", 8);
+    this.ui.tip("M = মানচিত্র · রিকশা, সিএনজি বা চায়ের দোকানের পাশে E = লুকানো · F = ফোন করা (ঝুঁকি আছে)", 14);
+  }
+  mapMarks() { return this.marks; }
+  hide() {
+    const s = this.st; if (s.seen > 0.35) return this.ui.say("ওরা এদিকেই তাকিয়ে আছে! এখন লুকিয়ে লাভ নেই, সরে পড়ুন!");
+    s.hidden = true; this.player.enabled = false; this.player.crouch = true; this.ui.say("নিঃশ্বাস বন্ধ করে বসে আছেন…", 3);
   }
   proof() { const gs = this.game.state; return gs.proof1 || gs.proof2; }
   inv() { const gs = this.game.state, a = []; if (gs.proof1) a.push("ভাঙা ফোন (প্রমাণ ১) · F চেপে ফোন করা যায়"); if (gs.proof2) a.push("হিসাবের খাতা (প্রমাণ ২)"); this.ui.inventory(a); }
@@ -162,7 +197,7 @@ export class Act3 extends Street {
   }
   onKey(code) {
     const s = this.st; if (!s || s.over) return;
-    if (code === "KeyE") { if (s.upload) s.tap = 1.0; else if (this.target) this.target.act(); }
+    if (code === "KeyE") { if (s.upload) s.tap = 1.0; else if (s.hidden) { s.hidden = false; this.player.enabled = true; this.player.crouch = false; } else if (this.target) this.target.act(); }
     if (code === "KeyF" && !s.upload) {
       if (!this.game.state.proof1) return this.ui.say("ফোন নেই।");
       const dx = this.cafe.x - this.player.pos.x, dz = this.cafe.z - this.player.pos.z;
@@ -192,13 +227,13 @@ export class Act3 extends Street {
       if (c.m.userData.bar) c.m.userData.bar.color.set(s.wanted > 0 ? (Math.floor(s.bar * 4) % 2 ? 0xff2020 : 0x2040ff) : 0x401010);
       const dx = p.pos.x - x, dz = p.pos.z - z, dist = Math.hypot(dx, dz); if (dist < nearest) { nearest = dist; nearCar = c; }
       const fwd = (Math.sin(c.m.rotation.y) * dx + Math.cos(c.m.rotation.y) * dz) / (dist || 1);
-      const sees = dist < (p.crouch ? 24 : 40) && (fwd > 0.86 || dist < 6) && this.los(x, z, p.pos.x, p.pos.z);
+      const sees = !s.hidden && dist < (p.crouch ? 24 : 40) * (0.6 + 0.4 * this.game.diff) && (fwd > 0.86 || dist < 6) && this.los(x, z, p.pos.x, p.pos.z);
       if (sees) { seen = true; if (dist < 5.5 && s.wanted > 0) this.caught(c.kind === "pickup" ? "পিকআপটা পাশে এসে থামল। দরজা খুলে গেল।" : "জিপ থেকে দুজন লাফিয়ে নেমে আপনাকে ধরে ফেলল।"); }
     });
     if (s.over) return;
     s.cool -= dt; s.seen = Math.max(0, Math.min(1, s.seen + (seen ? 1.4 : -0.6) * dt));
     if (seen && s.seen >= 1) { s.hunt = { x: p.pos.x, z: p.pos.z }; s.unseen = 0; if (s.cool <= 0) { this.alert(1, p.pos); s.cool = 9; this.audio.thud(0.5); this.ui.say(s.wanted >= 3 ? "পুরো এলাকা ঘিরে ফেলছে! লুকান!" : "ওরা আপনাকে দেখে ফেলেছে! গলিতে ঢুকে পড়ুন!", 4); } }
-    else if (!seen && s.wanted > 0 && (s.unseen += dt) > 25) { this.alert(-1); s.unseen = 0; if (!s.wanted) { s.hunt = null; this.ui.say("ওরা আপাতত খোঁজা থামিয়েছে।", 4); } }
+    else if (!seen && s.wanted > 0 && (s.unseen += dt * (s.hidden ? 2.5 : 1)) > 25 * this.game.diff) { this.alert(-1); s.unseen = 0; if (!s.wanted) { s.hunt = null; this.ui.say("ওরা আপাতত খোঁজা থামিয়েছে।", 4); } }
     this.ui.bar("wanted", s.wanted / 3, "খোঁজ: " + "★".repeat(s.wanted) + "☆".repeat(3 - s.wanted)); this.ui.bar("seen", s.seen, seen ? "হেডলাইটে পড়েছেন!" : "নজর");
     this.audio.engine(Math.max(0, 1 - nearest / 70)); this.fear = Math.max(s.seen, s.wanted / 4);
     if (nearCar) { const m = nearCar.m, f = new THREE.Vector3(Math.sin(m.rotation.y), 0, Math.cos(m.rotation.y)); this.beam.position.set(m.position.x + f.x * 2.3, 1.0, m.position.z + f.z * 2.3); this.beam.target.position.set(m.position.x + f.x * 30, 0, m.position.z + f.z * 30); this.beam.intensity = 260; }
@@ -210,12 +245,13 @@ export class Act3 extends Street {
 
     // interaction
     this.target = null; const dir = new THREE.Vector3(); cam.getWorldDirection(dir); let best = 0;
-    for (const it of this.items) {
-      const d = it.pos.clone().sub(cam.position), dl = d.length(); if (dl > it.range) continue;
-      const dot = d.normalize().dot(dir); if (dot < 0.6 || dot < best) continue; const lab = it.label(); if (lab) { best = dot; this.target = it; this.targetLabel = lab; }
+    if (!s.hidden) for (const it of this.items) {
+      const ddx = it.pos.x - cam.position.x, ddz = it.pos.z - cam.position.z; if (ddx * ddx + ddz * ddz > it.range * it.range) continue;
+      const d = it.pos.clone().sub(cam.position);
+      const dot = d.normalize().dot(dir); if (dot < 0.5 || dot < best) continue; const lab = it.label(); if (lab) { best = dot; this.target = it; this.targetLabel = lab; }
     }
-    this.ui.prompt(this.target ? `[E] ${this.targetLabel}` : "");
-    this.ui.status(p.crouch ? "বসে চলছেন" : p.running && p.speed > 3.5 ? "দৌড়াচ্ছেন" : "");
+    this.ui.prompt(s.hidden ? "[E] বেরিয়ে আসুন" : this.target ? `[E] ${this.targetLabel}` : "");
+    this.ui.status(s.hidden ? "লুকিয়ে আছেন" : p.crouch ? "বসে চলছেন" : p.running && p.speed > 3.5 ? "দৌড়াচ্ছেন" : "");
   }
   updUpload(dt) {
     const s = this.st, u = s.upload, hold = this.player.keys.has("KeyE") || s.tap > 0; s.tap -= dt;
@@ -223,7 +259,7 @@ export class Act3 extends Street {
     this.ui.bar("wanted", u.p, `আপলোড: ${bn(Math.floor(u.p * 100))}%`);
     if (left <= Math.min(50, u.total - 6)) {
       if (!u.warned) { u.warned = true; this.audio.thud(0.7); this.ui.fade(true, "বাইরে জিপ থামার শব্দ। ওরা দরজায় ধাক্কা দিচ্ছে!\n\nE চেপে ধরে রেখে দরজা ঠেকান"); }
-      u.door += (hold ? 7 : -15) * dt; if ((u.burst -= dt) <= 0) { u.burst = 2.5 + Math.random() * 2.5; u.door -= hold ? 5 : 14; this.audio.thud(0.6); }
+      u.door += (hold ? 7 : -15 * this.game.diff) * dt; if ((u.burst -= dt) <= 0) { u.burst = 2.5 + Math.random() * 2.5; u.door -= hold ? 5 : 14; this.audio.thud(0.6); }
       u.door = Math.min(100, u.door); this.ui.bar("seen", u.door / 100, hold ? "দরজা ঠেকিয়ে রেখেছেন" : "দরজা: E চেপে ধরুন!"); this.fear = 1 - u.door / 100;
       if (u.door <= 0) { s.upload = null; this.ui.bar("seen", null); return this.caught("দরজা ভেঙে ওরা ঢুকে পড়েছে। আপলোড শেষ হয়নি।"); }
     }

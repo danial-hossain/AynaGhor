@@ -7,7 +7,7 @@ import { GameAudio } from "./audio.js";
 import { UI } from "./ui.js";
 import { Act1 } from "./act1.js";
 import { Act2 } from "./act2.js";
-import { Intro, Act3 } from "./act3.js";
+import { Intro, Act3, Ambient } from "./act3.js";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
@@ -35,7 +35,7 @@ game.loadSave = () => { try { return JSON.parse(localStorage.getItem("aynaghor_s
 game.relock = () => { if (!isTouch && game.running && canvas.requestPointerLock) { try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} } };
 game.setMode = (name, opts) => {
   if (game.cur && game.cur.leave) game.cur.leave();
-  ui.fade(false); ui.prompt(""); ui.objective(""); ui.status(""); ui.matches(null); ui.flame(false);
+  ui.fade(false); ui.toggleMap(null); ui.prompt(""); ui.objective(""); ui.status(""); ui.matches(null); ui.flame(false);
   for (const b of ["noise", "seen", "wanted"]) ui.bar(b, null);
   game.mode = name; game.cur = game.modes[name]; game.cur.start(opts || {});
 };
@@ -76,6 +76,11 @@ async function boot() {
   game.modes.act2 = new Act2(ctx);
   game.modes.intro = new Intro(ctx);
   game.modes.act3 = new Act3(ctx);
+  game.ambient = new Ambient(ctx, game.modes.act3.gAll);
+  game.modes.walk.mapMarks = game.modes.intro.mapMarks = () => [];
+  game.diff = 1; try { game.diff = +localStorage.getItem("aynaghor_diff") || 1; } catch (e) {}
+  const dbtn = [...document.querySelectorAll("#diff button")], setDiff = d => { game.diff = d; dbtn.forEach(b => b.classList.toggle("on", +b.dataset.d === d)); try { localStorage.setItem("aynaghor_diff", d); } catch (e) {} };
+  dbtn.forEach(b => b.onclick = () => setDiff(+b.dataset.d)); setDiff(game.diff);
   game.ctx = ctx;
 
   // ---- menu / pause
@@ -95,6 +100,7 @@ async function boot() {
     if (!game.running) return;
     if (ui.keys) { ui.keys(code); return; }
     if (code === "Tab") ui.toggleInv();
+    if (code === "KeyM") { if (game.cur && game.cur.mapMarks) ui.toggleMap(data, game.cur.mapMarks()); else ui.say("এখানে মানচিত্র কোনো কাজে আসবে না।"); }
     if (game.cur && game.cur.onKey) game.cur.onKey(code);
   };
   addEventListener("keydown", e => {
@@ -103,7 +109,7 @@ async function boot() {
   });
   if (isTouch) {
     $("touch").classList.remove("hidden"); $("help").classList.add("hidden"); setupTouch(player, hud);
-    for (const [id, code] of [["btnE", "KeyE"], ["btnF", "KeyF"]]) $(id).addEventListener("touchstart", e => { e.preventDefault(); game.key(code); }, { passive: false });
+    for (const [id, code] of [["btnE", "KeyE"], ["btnF", "KeyF"], ["btnM", "KeyM"]]) $(id).addEventListener("touchstart", e => { e.preventDefault(); game.key(code); }, { passive: false });
   }
   try { const e = JSON.parse(localStorage.getItem("aynaghor_endings") || "[]"); if (e.length) $("endCount").textContent = `দেখা সমাপ্তি: ${String(e.length).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d])}/৫`; } catch (e) {}
   setLoad(1); $("loading").classList.add("hidden"); menu(false);
@@ -115,7 +121,7 @@ async function boot() {
     const cur = game.cur || game.modes.walk;
     if (game.running || !game.cur) {
       player.update(game.running ? dt : 0);
-      if (game.running) { cur.update(dt); ui.tick(dt); }
+      if (game.running) { cur.update(dt); ui.tick(dt); if (cur.scene === scene) game.ambient.update(dt); }
       else world.update(dt, camera);
       const fear = cur.fear || 0;
       if (fear > 0.45) { const a = (fear - 0.45) * 0.02; camera.rotation.x += (Math.random() - 0.5) * a; camera.rotation.y += (Math.random() - 0.5) * a; }

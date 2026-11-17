@@ -71,3 +71,13 @@ button.ghost { font: inherit; font-size: 15px; color: #a79f90; background: none;
 #kpGrid button { font: inherit; font-size: 22px; height: 52px; border-radius: 6px; border: 1px solid #5a4d3a; background: #241e16; color: #f1e7d0; cursor: pointer; }
 .shake { animation: shake .35s; } @keyframes shake { 25% { margin-left: -10px; } 75% { margin-left: 10px; } }
 #btnE { bottom: 206px; } #btnF { bottom: 120px; right: 108px !important; }
+
+#tip { position: absolute; left: 50%; top: 17%; transform: translateX(-50%); max-width: min(760px, 88%); text-align: center; font-size: 16px; color: #ffe2b0;
+  background: rgba(40,26,8,.72); border: 1px solid rgba(233,164,90,.5); padding: 5px 14px; border-radius: 6px; opacity: 0; transition: opacity .6s; }
+#tip.show { opacity: 1; }
+#map { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-1.5deg); box-shadow: 0 10px 40px #000; }
+#map canvas { display: block; width: min(86vh, 92vw); height: min(86vh, 92vw); }
+#diff { display: flex; gap: 6px; align-items: center; font-size: 14px; color: #9a9284; margin-top: 6px; }
+#diff button { font: inherit; font-size: 14px; color: #a79f90; background: none; border: 1px solid #4a443a; border-radius: 5px; padding: 3px 12px; cursor: pointer; }
+#diff button.on { color: #14100a; background: #e9a45a; border-color: #e9a45a; }
+#btnM { bottom: 34px; right: 108px !important; }
