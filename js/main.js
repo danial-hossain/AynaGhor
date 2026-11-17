@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { Collision } from "./collision.js";
-import { Player, setupTouch } from "./player.js";
-import { buildWorld } from "./world.js";
-import { GameAudio } from "./audio.js";
-import { UI } from "./ui.js";
-import { Act1 } from "./act1.js";
-import { Act2 } from "./act2.js";
-import { Intro, Act3, Ambient } from "./act3.js";
+import { Collision } from "./collision.js?v=1794901412";
+import { Player, setupTouch } from "./player.js?v=1794901412";
+import { buildWorld } from "./world.js?v=1794901412";
+import { GameAudio } from "./audio.js?v=1794901412";
+import { UI } from "./ui.js?v=1794901412";
+import { Act1 } from "./act1.js?v=1794901412";
+import { Act2 } from "./act2.js?v=1794901412";
+import { Intro, Act3, Ambient } from "./act3.js?v=1794901412";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
@@ -45,8 +45,8 @@ async function boot() {
     Promise.all([document.fonts.load('700 64px "Hind Siliguri"', "আয়নাঘর"), document.fonts.load('400 16px "Hind Siliguri"', "আ")]),
     new Promise(r => setTimeout(r, 4000))]);
   const [data, gltf] = await Promise.all([
-    fetch("assets/mirpur.json").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
-    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
+    fetch("assets/mirpur.json?v=1794901412").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
+    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb?v=1794901412", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
     fontsReady]);
   setLoad(0.85, "রাস্তা সাজানো হচ্ছে…");
   await new Promise(r => setTimeout(r, 30));
@@ -94,11 +94,11 @@ async function boot() {
   $("btnResume").onclick = () => { go(null); player.enabled = game.wasEnabled && !ui.modal; };
   $("btnNew").onclick = () => { game.state = { proof1: false, proof2: false, prisoner: false, clues: {}, matches: 0 }; go(game.modes.intro ? "intro" : "act1"); };
   $("btnWalk").onclick = () => go("walk");
-  const how = show => { $("howto").classList.toggle("hidden", !show); if (show && game.running) { if (document.pointerLockElement) document.exitPointerLock(); else game.pause(); } };
-  $("btnHelp").onclick = () => how(true); $("howClose").onclick = () => how(false);
+  const how = show => { if (!$("howto")) return; $("howto").classList.toggle("hidden", !show); if (show && game.running) { if (document.pointerLockElement) document.exitPointerLock(); else game.pause(); } };
+  if ($("btnHelp")) $("btnHelp").onclick = () => how(true); if ($("howClose")) $("howClose").onclick = () => how(false);
   let seenHow = false; try { seenHow = !!localStorage.getItem("aynaghor_how"); } catch (e) {}
   const firstNew = $("btnNew").onclick;
-  $("btnNew").onclick = () => { if (!seenHow) { seenHow = true; try { localStorage.setItem("aynaghor_how", "1"); } catch (e) {} how(true); $("howClose").onclick = () => { how(false); $("howClose").onclick = () => how(false); firstNew(); }; } else firstNew(); };
+  $("btnNew").onclick = () => { if (!seenHow && $("howto")) { seenHow = true; try { localStorage.setItem("aynaghor_how", "1"); } catch (e) {} how(true); $("howClose").onclick = () => { how(false); $("howClose").onclick = () => how(false); firstNew(); }; } else firstNew(); };
   $("btnContinue").onclick = () => { const s = game.loadSave() || {}; Object.assign(game.state, s); const m = "act" + (s.act || 1); go(game.modes[m] ? m : "act1", { resume: true }); };
   document.addEventListener("pointerlockchange", () => { if (!isTouch && document.pointerLockElement !== canvas && !game.noLock && !ui.modal) game.pause(); });
   game.key = code => {
@@ -110,7 +110,7 @@ async function boot() {
   };
   addEventListener("keydown", e => {
     if (e.code === "F3") { e.preventDefault(); $("debug").classList.toggle("hidden"); }
-    if (e.code === "KeyH" && !ui.modal) $("howto").classList.contains("hidden") ? how(true) : how(false);
+    if (e.code === "KeyH" && !ui.modal && $("howto")) $("howto").classList.contains("hidden") ? how(true) : how(false);
     if (!e.repeat) game.key(e.code);
   });
   if (isTouch) {

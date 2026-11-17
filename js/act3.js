@@ -1,8 +1,8 @@
 // Intro (the abduction) and Act 3 (Mirpur night: corrupt police patrols, wanted level, allies you may or may not
 // be able to trust, phone tracking, cyber-café upload finale) + the five endings. Both run on the real street map.
 import * as THREE from "three";
-import { figure, walkAnim } from "./act2.js";
-import { rickshawGeo } from "./props.js";
+import { figure, walkAnim } from "./act2.js?v=1794901412";
+import { rickshawGeo } from "./props.js?v=1794901412";
 
 const bn = n => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
 const CREDIT = "\n\nমানচিত্রের তথ্য © OpenStreetMap contributors (ODbL)";
