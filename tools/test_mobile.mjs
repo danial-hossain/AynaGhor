@@ -1,0 +1,33 @@
+import { open } from "./pw.mjs";
+const { page, shot, close } = await open(844, 390, true);
+const ev = (f, a) => page.evaluate(f, a);
+await shot("m_menu");
+await page.tap("#btnNew"); await shot("m_howto"); await page.tap("#howClose"); await page.waitForTimeout(600);
+console.log("started", JSON.stringify(await ev(() => ({ mode: window.__game.mode, running: window.__game.running, touchUI: !document.getElementById("touch").classList.contains("hidden") }))));
+await shot("m_intro");
+// joystick + look via synthetic touch events
+const r = await ev(async () => {
+  const g = window.__game, p = g.player, stick = document.getElementById("stick"), cv = document.getElementById("c"), rc = stick.getBoundingClientRect();
+  const T = (id, target, x, y) => new Touch({ identifier: id, target, clientX: x, clientY: y });
+  const fire = (el, type, t) => el.dispatchEvent(new TouchEvent(type, { changedTouches: [t], touches: type === "touchend" ? [] : [t], bubbles: true, cancelable: true }));
+  const cx = rc.left + rc.width / 2, cy = rc.top + rc.height / 2, p0 = { ...p.pos }, yaw0 = p.yaw;
+  fire(stick, "touchstart", T(1, stick, cx, cy)); fire(stick, "touchmove", T(1, stick, cx, cy - 60));
+  for (let i = 0; i < 40; i++) p.update(0.03);
+  const moved = Math.hypot(p.pos.x - p0.x, p.pos.z - p0.z); fire(stick, "touchend", T(1, stick, cx, cy - 60));
+  fire(cv, "touchstart", T(2, cv, 500, 150)); fire(cv, "touchmove", T(2, cv, 560, 150)); fire(cv, "touchend", T(2, cv, 560, 150));
+  return { moved: +moved.toFixed(2), turned: +(p.yaw - yaw0).toFixed(3), stickAfter: p.stick };
+});
+console.log("touch", JSON.stringify(r));
+await ev(() => { const g = window.__game; g.state.matches = 3; g.setMode("act1"); g.cur.takeBox(); g.key("KeyF"); g.player.teleport(-0.7, 0.45, Math.PI / 2); });
+await page.tap("#btnInv"); await shot("m_room");
+await ev(() => { const g = window.__game; g.cur.ui.openKeypad(c => g.cur.tryCode(c)); }); await shot("m_keypad");
+const code = await ev(() => window.__game.cur.st.code);
+for (const d of code) await page.tap(`#kpGrid button:nth-child(${d === "0" ? 11 : +d})`);
+console.log("keypad by tapping", JSON.stringify(await ev(() => ({ open: window.__game.cur.st.cupOpen }))));
+await ev(() => { const g = window.__game; g.state.proof1 = true; g.setMode("act3"); g.cur.talk("journo"); }); await shot("m_choice");
+await page.tap("#chBtns button:nth-child(1)");
+console.log("choice by tapping", JSON.stringify(await ev(() => ({ journo: window.__game.cur.st.journo, enabled: window.__game.player.enabled }))));
+await page.tap("#btnM"); await shot("m_map"); await page.tap("#btnM");
+await page.tap("#btnPause"); console.log("paused", await ev(() => !window.__game.running)); await page.tap("#btnResume");
+console.log("resumed", await ev(() => window.__game.running));
+await close();

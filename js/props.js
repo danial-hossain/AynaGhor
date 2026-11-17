@@ -98,3 +98,18 @@ export function monumentGeo() {   // golchottor centrepiece
     part(new THREE.OctahedronGeometry(0.7), 0xd8c9a0, 0, 7.6, 0),
   ]);
 }
+
+export function treeGeo() {
+  return mergeGeometries([
+    part(cyl(0.16, 2.6, 6), 0x3a2a1c, 0, 1.3, 0),
+    part(new THREE.IcosahedronGeometry(1.7, 0), TINT, 0, 3.6, 0),
+    part(new THREE.IcosahedronGeometry(1.2, 0), TINT, 0.9, 3.0, 0.4, 0.5, 1, 0),
+    part(new THREE.IcosahedronGeometry(1.1, 0), TINT, -0.8, 3.2, -0.5, 1, 0.3, 0),
+  ]);
+}
+export function tankGeo() {      // rooftop water tank on a small stand
+  return mergeGeometries([
+    part(cyl(0.75, 1.3, 10), 0x1a1a1c, 0, 1.45, 0), part(cyl(0.3, 0.12, 8), 0x1a1a1c, 0, 2.16, 0),
+    part(box(1.3, 0.8, 1.3), 0x77736c, 0, 0.4, 0),
+  ]);
+}

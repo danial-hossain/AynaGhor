@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>আয়নাঘর</title>
-<link rel="stylesheet" href="css/style.css?v=1794901412">
+<link rel="stylesheet" href="css/style.css?v=1794920474">
 <script type="importmap">
 { "imports": {
     "three": "./vendor/three/three.module.min.js",
@@ -14,6 +14,8 @@
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="vig"></div>
+<div id="rotate"><p>ফোনটা আড়াআড়ি (landscape) করে ধরুন</p></div>
 
 <div id="hud" class="hidden">
   <div id="toast"></div>
@@ -40,6 +42,9 @@
     <button id="btnE">ধরুন</button>
     <button id="btnF">আলো</button>
     <button id="btnM">ম্যাপ</button>
+    <button id="btnPause" class="sm">⏸</button>
+    <button id="btnHelpT" class="sm">?</button>
+    <button id="btnInv" class="sm">ব্যাগ</button>
   </div>
 </div>
 
@@ -62,13 +67,14 @@
           <li><b>E</b> ধরা, কথা বলা, লুকানো</li>
           <li><b>F</b> দেশলাই · রাস্তায় ফোন</li>
           <li><b>M</b> মানচিত্র (রাস্তায়)</li>
-          <li><b>Tab</b> সঙ্গের জিনিস · <b>H</b> এই পাতা</li>
+          <li><b>Tab</b> ব্যাগ ও মিশনের তালিকা · <b>H</b> এই পাতা</li>
         </ul>
         <h4>সাধারণ নিয়ম</h4>
         <ul>
           <li>কোনো জিনিসের কাছে গিয়ে তাকালে <b>[E]</b> লেখা ভেসে ওঠে</li>
           <li>কথোপকথনে <b>১, ২, ৩</b> চেপে উত্তর বাছুন</li>
           <li>প্রতিটা অঙ্কের শুরুতে খেলা নিজে থেকে save হয়</li>
+          <li><b>ফোনে:</b> বাঁয়ে joystick, screen টেনে তাকানো, ডানে বোতাম</li>
         </ul>
       </div>
       <div>
@@ -114,6 +120,6 @@
   addEventListener("error", function (e) { showErr(e.message || (e.target && (e.target.src || e.target.href)) || "অজানা ত্রুটি"); }, true);
   addEventListener("unhandledrejection", function (e) { showErr(String(e.reason && e.reason.message || e.reason)); });
 </script>
-<script type="module" src="js/main.js?v=1794901412"></script>
+<script type="module" src="js/main.js?v=1794920474"></script>
 </body>
 </html>

@@ -78,7 +78,7 @@ export function setupTouch(player, root) {
   stick.addEventListener("touchstart", e => { sid = e.changedTouches[0].identifier; e.preventDefault(); }, { passive: false });
   addEventListener("touchstart", e => {
     for (const t of e.changedTouches)
-      if (lid === null && t.identifier !== sid && t.clientX > innerWidth * 0.4 && !(t.target instanceof HTMLButtonElement)) { lid = t.identifier; lx = t.clientX; ly = t.clientY; }
+      if (lid === null && t.identifier !== sid && t.target && t.target.tagName === "CANVAS") { lid = t.identifier; lx = t.clientX; ly = t.clientY; }
   }, { passive: true });
   addEventListener("touchmove", e => {
     for (const t of e.changedTouches) {
@@ -88,7 +88,7 @@ export function setupTouch(player, root) {
         const l = Math.hypot(x, y); if (l > 1) { x /= l; y /= l; }
         setKnob(x, y);
       } else if (t.identifier === lid && player.enabled) {
-        player.look((t.clientX - lx) * 0.005, (t.clientY - ly) * 0.005); lx = t.clientX; ly = t.clientY;
+        player.look((t.clientX - lx) * 0.0052, (t.clientY - ly) * 0.0045); lx = t.clientX; ly = t.clientY;
       }
     }
   }, { passive: true });

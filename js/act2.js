@@ -168,6 +168,10 @@ export class Act2 {
     const s = this.st;
     this.ui.objective(!s.ledger ? "বাড়ি থেকে বেরোনোর পথ খুঁজুন। প্রমাণ থাকলে সঙ্গে নিন" : s.key ? "গেট দিয়ে অথবা ছাদ দিয়ে বেরিয়ে যান" : "বেরোনোর পথ: গেটের চাবি খুঁজুন অথবা ছাদে উঠুন");
   }
+  missions() {
+    const s = this.st; if (!s) return [];
+    return [["হিসাবের খাতা নিন (প্রমাণ ২)", s.ledger], ["পাশের ঘরের বন্দিকে মুক্ত করুন (ঐচ্ছিক)", s.freed], ["বেরোনোর পথ খুঁজুন: গেটের চাবি অথবা ছাদ", !!(s.key || s.roof)], ["বাড়ি থেকে বেরিয়ে যান", !!(s.over && s.out)], ["গোপন: বাথরুমের আয়না দেখুন", !!this.game.state.clues.b]];
+  }
   inv() { const gs = this.game.state, s = this.st, a = ["দেশলাই"]; if (gs.proof1) a.push("ভাঙা ফোন (প্রমাণ ১)"); if (s.ledger) a.push("হিসাবের খাতা (প্রমাণ ২)"); if (s.key) a.push("গেটের চাবি"); this.ui.inventory(a); }
   takeLedger() { this.st.ledger = true; this.ledger.visible = false; this.audio.click(); this.inv(); this.objective(); this.ui.say("খাতায় তারিখ ধরে ধরে লেখা: কোন অফিসারকে কত টাকা দেওয়া হয়েছে। এটাই আসল প্রমাণ।", 6); }
   search(ch) {
@@ -181,6 +185,7 @@ export class Act2 {
   }
   stairs(up) {
     const c = ctr(...this.spots[up ? "U" : "S"]); this.player.teleport(c.x + (up ? 1.2 : -1.2), c.z + (up ? -1.0 : 0.3)); this.st.trail = [];
+    if (up) this.st.roof = true;
     if (up) this.ui.say("ছাদ। পাশের বাড়ির ছাদটা হাত দুয়েক দূরে, একটু নিচে। লাফ দেওয়া যাবে।", 5);
     if (this.st.follow) this.pris.position.set(this.player.pos.x, 0, this.player.pos.z);
   }
@@ -200,7 +205,7 @@ export class Act2 {
   finish(how) {
     const s = this.st, gs = this.game.state; if (s.over) return;
     const pd = Math.hypot(this.pris.position.x - this.player.pos.x, this.pris.position.z - this.player.pos.z);
-    s.over = true; this.player.enabled = false; gs.proof2 = s.ledger; gs.prisoner = s.follow && pd < 7; this.game.save({ act: 3 });
+    s.over = s.out = true; this.player.enabled = false; gs.proof2 = s.ledger; gs.prisoner = s.follow && pd < 7; this.game.save({ act: 3 });
     const txt = (how === "roof" ? "পাশের ছাদে লাফিয়ে, সিঁড়ি বেয়ে আপনি রাস্তায় নেমে এলেন।" : "গেট খুলে নিঃশব্দে রাস্তায় বেরিয়ে এলেন।")
       + (gs.prisoner ? "\nবন্দি মানুষটাও আপনার সঙ্গে বেরিয়েছে। সে হাসপাতালের দিকে চলে গেল।" : s.freed ? "\nবন্দি মানুষটা পেছনে পড়ে গেছে…" : "\nপাশের ঘরের মানুষটা ভেতরেই রয়ে গেল…")
       + (s.ledger ? "" : "\nহিসাবের খাতাটা আনা হয়নি।");

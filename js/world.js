@@ -1,6 +1,6 @@
 // Builds the night-time Mirpur 10 scene: city meshes from the GLB, street detail, lights.
 import * as THREE from "three";
-import * as P from "./props.js?v=1794901412";
+import * as P from "./props.js?v=1794920474";
 
 const FOG = 0x0c1018;
 const SHOPS = ["মায়ের দোয়া স্টোর", "বিসমিল্লাহ হোটেল", "ভাই ভাই টেলিকম", "নিউ ঢাকা ফার্মেসি", "মিরপুর বিরিয়ানি হাউস", "আল-আমিন জেনারেল স্টোর",
@@ -70,7 +70,7 @@ function cityMaterials() {
   };
 }
 
-export function buildWorld(scene, data, gltf, collision) {
+export function buildWorld(scene, data, gltf, collision, opt = {}) {
   const rnd = mulberry(1017);
   scene.background = new THREE.Color(FOG);
   scene.fog = new THREE.FogExp2(FOG, 0.0072);
@@ -95,7 +95,7 @@ export function buildWorld(scene, data, gltf, collision) {
   }
   const stars = new THREE.Points(new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(sp, 3)),
     new THREE.PointsMaterial({ color: 0xaab4d0, size: 1.6, sizeAttenuation: false, fog: false, transparent: true, opacity: 0.7, depthWrite: false }));
-  stars.frustumCulled = false; scene.add(stars);
+  stars.frustumCulled = false; const sky = new THREE.Group(); scene.add(sky); sky.add(stars);
 
   const glowTex = glowTexture();
   const glows = [];   // [x, y, z, radius, colorHex]  ground light pools
@@ -231,6 +231,50 @@ export function buildWorld(scene, data, gltf, collision) {
     }
   }
 
+
+  // ---- sky dome with a faint city glow at the horizon, and a moon
+  const dome = new THREE.SphereGeometry(820, 24, 12), dc = new Float32Array(dome.attributes.position.count * 3), top = new THREE.Color(0x03050b), hor = new THREE.Color(FOG), glowC = new THREE.Color(0x2a1c14);
+  for (let i = 0; i < dome.attributes.position.count; i++) {
+    const y = Math.max(0, dome.attributes.position.getY(i) / 820), c0 = hor.clone().lerp(glowC, Math.max(0, 0.6 - y * 6)).lerp(top, Math.min(1, y * 1.6)); dc.set([c0.r, c0.g, c0.b], i * 3);
+  }
+  dome.setAttribute("color", new THREE.BufferAttribute(dc, 3));
+  const skyDome = new THREE.Mesh(dome, new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.BackSide, fog: false, depthWrite: false })); skyDome.renderOrder = -2; skyDome.frustumCulled = false; sky.add(skyDome);
+  const moonS = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xdfe8ff, fog: false, depthWrite: false, transparent: true, opacity: 0.9 })); moonS.scale.setScalar(90); moonS.position.set(-330, 420, 250); sky.add(moonS);
+
+  // ---- dashed centre lines on the main roads
+  const dash = [];
+  for (const r of data.roads) {
+    if (r.k < 3) continue; let acc = 0;
+    for (let i = 2; i < r.p.length; i += 2) {
+      const ax = r.p[i - 2], az = r.p[i - 1], bx = r.p[i], bz = r.p[i + 1], L = Math.hypot(bx - ax, bz - az); if (L < 0.01) continue;
+      const ux = (bx - ax) / L, uz = (bz - az) / L, nx = -uz * 0.09, nz = ux * 0.09;
+      for (let s0 = (9 - acc) % 9; s0 + 3.5 < L; s0 += 9) {
+        const x0 = ax + ux * s0, z0 = az + uz * s0, x1 = x0 + ux * 3.5, z1 = z0 + uz * 3.5; if (Math.abs(x0) > 420 || Math.abs(z0) > 420) continue;
+        dash.push(x0 - nx, 0.23, z0 - nz, x0 + nx, 0.23, z0 + nz, x1 + nx, 0.23, z1 + nz, x0 - nx, 0.23, z0 - nz, x1 + nx, 0.23, z1 + nz, x1 - nx, 0.23, z1 - nz);
+      }
+      acc = (acc + L) % 9;
+    }
+  }
+  const dm = new THREE.Mesh(new THREE.BufferGeometry().setAttribute("position", new THREE.Float32BufferAttribute(dash, 3)),
+    new THREE.MeshBasicMaterial({ color: 0x77756c, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -6, polygonOffsetUnits: -6 })); dm.frustumCulled = false; scene.add(dm);
+
+  // ---- rooftop water tanks and roadside trees
+  const tanks = [];
+  for (const b of data.buildings) {
+    if (b[0] < 6 || Math.abs(b[1]) > 300 || Math.abs(b[2]) > 300 || rnd() > 0.55) continue;
+    let cx = 0, cz = 0; const n = (b.length - 1) / 2; for (let i = 1; i < b.length; i += 2) { cx += b[i] / n; cz += b[i + 1] / n; }
+    tanks.push([cx, b[0], cz, rnd() * 3]);
+  }
+  instanced(P.tankGeo(), tanks, (d, t) => { d.position.set(t[0], t[1], t[2]); d.rotation.y = t[3]; });
+  const trees = [];
+  data.lamps.forEach((l, i) => {
+    if (i % 2 || Math.abs(l[0]) > 320 || Math.abs(l[1]) > 320) return;
+    const x = l[0] - l[3] * 7 - l[2] * 0.6, z = l[1] + l[2] * 7 - l[3] * 0.6;
+    if (!collision.blocked(x, z)) trees.push([x, z, 0.75 + rnd() * 0.6, rnd() * 6]);
+  });
+  instanced(P.treeGeo(), trees, (d, t) => { d.position.set(t[0], 0, t[1]); d.scale.setScalar(t[2]); d.rotation.y = t[3]; }, (t, i) => [0x1f3d22, 0x274a26, 0x1a3320][i % 3]);
+  for (const t of trees) collision.addCircle(t[0], t[1], 0.3);
+
   // ---- ground light pools + halos
   const glowMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2),
     new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.85 }), glows.length);
@@ -248,11 +292,11 @@ export function buildWorld(scene, data, gltf, collision) {
   haloPts.frustumCulled = false; haloPts.renderOrder = 3; scene.add(haloPts);
 
   // ---- pool of real lights that follows the player to the nearest light sources
-  const POOL = 4, pool = [];
+  const POOL = opt.lowEnd ? 2 : 4, pool = [];
   for (let i = 0; i < POOL; i++) { const l = new THREE.PointLight(SODIUM, 0, 30, 1.4); scene.add(l); pool.push(l); }
   let timer = 0;
   function update(dt, cam) {
-    stars.position.copy(cam.position);
+    sky.position.copy(cam.position);
     timer -= dt; if (timer > 0) return; timer = 0.2;
     const px = cam.position.x, pz = cam.position.z;
     const near = lightSpots.map(s => [(s[0] - px) ** 2 + (s[2] - pz) ** 2, s]).sort((a, b) => a[0] - b[0]);

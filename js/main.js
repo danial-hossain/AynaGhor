@@ -1,22 +1,22 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { Collision } from "./collision.js?v=1794901412";
-import { Player, setupTouch } from "./player.js?v=1794901412";
-import { buildWorld } from "./world.js?v=1794901412";
-import { GameAudio } from "./audio.js?v=1794901412";
-import { UI } from "./ui.js?v=1794901412";
-import { Act1 } from "./act1.js?v=1794901412";
-import { Act2 } from "./act2.js?v=1794901412";
-import { Intro, Act3, Ambient } from "./act3.js?v=1794901412";
+import { Collision } from "./collision.js?v=1794920474";
+import { Player, setupTouch } from "./player.js?v=1794920474";
+import { buildWorld } from "./world.js?v=1794920474";
+import { GameAudio } from "./audio.js?v=1794920474";
+import { UI } from "./ui.js?v=1794920474";
+import { Act1 } from "./act1.js?v=1794920474";
+import { Act2 } from "./act2.js?v=1794920474";
+import { Intro, Act3, Ambient } from "./act3.js?v=1794920474";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
-const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+const isTouch = matchMedia("(pointer: coarse)").matches;
 
 let renderer;
-try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" }); }
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: !isTouch, powerPreference: "high-performance" }); }
 catch (e) { $("loadText").textContent = "এই browser-এ WebGL চালু নেই, তাই game চালানো যাচ্ছে না।"; throw e; }
-const BASE_PR = Math.min(devicePixelRatio || 1, 1.25); let pr = BASE_PR;
+const BASE_PR = Math.min(devicePixelRatio || 1, isTouch ? 1 : 1.25), MIN_PR = isTouch ? 0.45 : 0.5; let pr = BASE_PR;
 renderer.setPixelRatio(pr);
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
 const scene = new THREE.Scene();
@@ -38,6 +38,9 @@ game.setMode = (name, opts) => {
   ui.fade(false); ui.toggleMap(null); ui.prompt(""); ui.objective(""); ui.status(""); ui.matches(null); ui.flame(false);
   for (const b of ["noise", "seen", "wanted"]) ui.bar(b, null);
   game.mode = name; game.cur = game.modes[name]; game.cur.start(opts || {});
+  const street = game.cur.scene === scene; $("btnF").textContent = street ? "ফোন" : "আলো"; $("btnM").style.display = street ? "" : "none";
+  game.misDone = null; ui.missions(game.cur.missions ? game.cur.missions() : []);
+  const TITLE = { intro: "মিরপুর ১০ · রাত ২টা ১৭", act1: "প্রথম অঙ্ক · ঘর", act2: "দ্বিতীয় অঙ্ক · বাড়ি", act3: "তৃতীয় অঙ্ক · মিরপুরের রাত" }[name]; if (TITLE) ui.toast(TITLE);
 };
 
 async function boot() {
@@ -45,14 +48,14 @@ async function boot() {
     Promise.all([document.fonts.load('700 64px "Hind Siliguri"', "আয়নাঘর"), document.fonts.load('400 16px "Hind Siliguri"', "আ")]),
     new Promise(r => setTimeout(r, 4000))]);
   const [data, gltf] = await Promise.all([
-    fetch("assets/mirpur.json?v=1794901412").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
-    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb?v=1794901412", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
+    fetch("assets/mirpur.json?v=1794920474").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
+    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb?v=1794920474", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
     fontsReady]);
   setLoad(0.85, "রাস্তা সাজানো হচ্ছে…");
   await new Promise(r => setTimeout(r, 30));
 
   const collision = new Collision(data);
-  const world = buildWorld(scene, data, gltf, collision);
+  const world = buildWorld(scene, data, gltf, collision, { lowEnd: isTouch });
   const player = new Player(camera, collision, canvas);
   player.onStep = (run, crouch) => audio.step(run, crouch);
   Object.assign(game, { data, world, player, collision });
@@ -88,7 +91,8 @@ async function boot() {
     overlay.classList.remove("hidden"); $("menu").classList.remove("hidden");
     $("btnResume").classList.toggle("hidden", !paused); $("btnContinue").classList.toggle("hidden", paused || !game.loadSave());
   };
-  const go = (name, opts) => { overlay.classList.add("hidden"); hud.classList.remove("hidden"); game.running = true; audio.start(); game.relock(); if (name) game.setMode(name, opts); else if (!ui.modal) player.enabled = true; };
+  const go = (name, opts) => { overlay.classList.add("hidden"); hud.classList.remove("hidden"); game.running = true; audio.start(); game.relock();
+    if (isTouch) { try { const el = document.documentElement, fs = el.requestFullscreen || el.webkitRequestFullscreen; if (fs && !document.fullscreenElement) Promise.resolve(fs.call(el)).then(() => screen.orientation && screen.orientation.lock && screen.orientation.lock("landscape")).catch(() => {}); } catch (e) {} } if (name) game.setMode(name, opts); else if (!ui.modal) player.enabled = true; };
   game.start = go;
   game.pause = () => { if (!game.running) return; game.wasEnabled = player.enabled; player.enabled = false; game.running = false; menu(true); };
   $("btnResume").onclick = () => { go(null); player.enabled = game.wasEnabled && !ui.modal; };
@@ -115,7 +119,11 @@ async function boot() {
   });
   if (isTouch) {
     $("touch").classList.remove("hidden"); $("help").classList.add("hidden"); setupTouch(player, hud);
-    for (const [id, code] of [["btnE", "KeyE"], ["btnF", "KeyF"], ["btnM", "KeyM"]]) $(id).addEventListener("touchstart", e => { e.preventDefault(); game.key(code); }, { passive: false });
+    $("btnE").addEventListener("touchstart", () => player.keys.add("KeyE"), { passive: true });
+    for (const ev of ["touchend", "touchcancel"]) $("btnE").addEventListener(ev, () => player.keys.delete("KeyE"));
+    $("btnPause").addEventListener("touchstart", e => { e.preventDefault(); game.pause(); }, { passive: false });
+    $("btnHelpT").addEventListener("touchstart", e => { e.preventDefault(); how(true); }, { passive: false });
+    for (const [id, code] of [["btnE", "KeyE"], ["btnF", "KeyF"], ["btnM", "KeyM"], ["btnInv", "Tab"]]) $(id).addEventListener("touchstart", e => { e.preventDefault(); game.key(code); }, { passive: false });
   }
   try { const e = JSON.parse(localStorage.getItem("aynaghor_endings") || "[]"); if (e.length) $("endCount").textContent = `দেখা সমাপ্তি: ${String(e.length).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d])}/৫`; } catch (e) {}
   setLoad(1); $("loading").classList.add("hidden"); menu(false);
@@ -136,9 +144,14 @@ async function boot() {
     frames++;
     if (now - t0 >= 500) {
       game.fps = Math.round(frames * 1000 / (now - t0)); t0 = now; frames = 0;
+      if (game.running && cur.missions) {           // mission tracker: toast when something gets ticked off
+        const m = cur.missions(), key = m.map(x => x[1] ? 1 : 0).join("");
+        if (game.misDone !== null && key !== game.misDone) m.forEach((x, i) => { if (x[1] && game.misDone[i] === "0") { ui.toast("✓ " + x[0]); audio.beep(); } });
+        if (key !== game.misDone) { game.misDone = key; ui.missions(m); }
+      }
       // dynamic resolution: keep the frame rate playable on weak GPUs
       if (game.running && !game.fixedPR) {
-        if (game.fps < 28 && pr > 0.5) { pr = Math.max(0.5, pr * 0.85); renderer.setPixelRatio(pr); resize(); }
+        if (game.fps < 28 && pr > MIN_PR) { pr = Math.max(MIN_PR, pr * 0.85); renderer.setPixelRatio(pr); resize(); }
         else if (game.fps > 55 && pr < BASE_PR) { pr = Math.min(BASE_PR, pr * 1.08); renderer.setPixelRatio(pr); resize(); }
       }
       $("debug").textContent = `${game.fps} fps  res ${pr.toFixed(2)}\nx ${player.pos.x.toFixed(1)}  z ${player.pos.z.toFixed(1)}  ${game.mode || ""}\ndraw ${renderer.info.render.calls}  tri ${renderer.info.render.triangles}`;

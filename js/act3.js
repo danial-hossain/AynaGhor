@@ -1,8 +1,8 @@
 // Intro (the abduction) and Act 3 (Mirpur night: corrupt police patrols, wanted level, allies you may or may not
 // be able to trust, phone tracking, cyber-café upload finale) + the five endings. Both run on the real street map.
 import * as THREE from "three";
-import { figure, walkAnim } from "./act2.js?v=1794901412";
-import { rickshawGeo } from "./props.js?v=1794901412";
+import { figure, walkAnim } from "./act2.js?v=1794920474";
+import { rickshawGeo } from "./props.js?v=1794920474";
 
 const bn = n => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
 const CREDIT = "\n\nমানচিত্রের তথ্য © OpenStreetMap contributors (ODbL)";
@@ -155,6 +155,11 @@ export class Act3 extends Street {
     this.ui.tip("M = মানচিত্র · রিকশা, সিএনজি বা চায়ের দোকানের পাশে E = লুকানো · F = ফোন করা (ঝুঁকি আছে)", 14);
   }
   mapMarks() { return this.marks; }
+  missions() {
+    const s = this.st; if (!s) return [];
+    return this.proof() ? [["সাংবাদিকের সঙ্গে দেখা করুন (ঐচ্ছিক)", s.journo], ["সাইবার ক্যাফেতে পৌঁছান", !!(s.upload || s.done)], ["প্রমাণ আপলোড করুন", !!s.done], ["গোপন: সেলুনের আয়না দেখুন", !!this.game.state.clues.c]]
+      : [["মিরপুর ছেড়ে পালান", false]];
+  }
   hide() {
     const s = this.st; if (s.seen > 0.35) return this.ui.say("ওরা এদিকেই তাকিয়ে আছে! এখন লুকিয়ে লাভ নেই, সরে পড়ুন!");
     s.hidden = true; this.player.enabled = false; this.player.crouch = true; this.ui.say("নিঃশ্বাস বন্ধ করে বসে আছেন…", 3);
@@ -263,7 +268,7 @@ export class Act3 extends Street {
       u.door = Math.min(100, u.door); this.ui.bar("seen", u.door / 100, hold ? "দরজা ঠেকিয়ে রেখেছেন" : "দরজা: E চেপে ধরুন!"); this.fear = 1 - u.door / 100;
       if (u.door <= 0) { s.upload = null; this.ui.bar("seen", null); return this.caught("দরজা ভেঙে ওরা ঢুকে পড়েছে। আপলোড শেষ হয়নি।"); }
     }
-    if (u.p >= 1) { const gs = this.game.state, c = gs.clues; const n = c.a && c.b && c.c ? 5 : gs.proof1 && gs.proof2 && gs.prisoner ? 1 : 2;
+    if (u.p >= 1) { s.done = true; const gs = this.game.state, c = gs.clues; const n = c.a && c.b && c.c ? 5 : gs.proof1 && gs.proof2 && gs.prisoner ? 1 : 2;
       this.end(n, n === 2 && gs.prisoner ? "আপলোড শেষ। বন্দি মানুষটাও বেঁচে গেছে। কিন্তু প্রমাণ অর্ধেক: একটা টুকরো ওই বাড়িতেই রয়ে গেছে। মামলা টিকবে কি না, কেউ জানে না। আয়নায় সত্যের অর্ধেকটা মুখই দেখা গেল।" : null); }
   }
 }

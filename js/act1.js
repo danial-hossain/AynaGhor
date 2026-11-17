@@ -2,7 +2,7 @@
 // screwdriver, mirror frame -> ventilation hole. Footsteps event: hide in the dark on the bed.
 import * as THREE from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
-import { Collision } from "./collision.js?v=1794901412";
+import { Collision } from "./collision.js?v=1794920474";
 
 export const bn = n => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
 const W = 2.2, D = 2.0, H = 2.8;                 // room half-width (x), half-depth (z), height
@@ -155,6 +155,11 @@ export class Act1 {
     this.ui.objective(!s.hasBox ? "আলোর ব্যবস্থা করুন। হাতড়ে ঘরটা খুঁজে দেখুন" : !s.everLit ? "F চেপে একটা কাঠি জ্বালান"
       : !s.cupOpen ? (s.sawCode ? "উল্টো লেখাটা পড়ার উপায় বের করুন" : "ঘরটা ভালো করে দেখুন। বেরোনোর পথ খুঁজুন")
       : !(s.hasDriver && s.hasPhone) ? "আলমারির ভেতরের জিনিসগুলো নিন" : !s.mirrorOff ? "স্ক্রু-ড্রাইভারটা কোথায় কাজে লাগে?" : "ফোকর দিয়ে বেরিয়ে যান");
+  }
+  missions() {
+    const s = this.st; if (!s) return [];
+    return s.blocked ? [["দরজার কব্জা খুলে বের হন", s.over && s.hinges <= 0]]
+      : [["আলোর ব্যবস্থা করুন", s.hasBox], ["দেয়ালের কোড পড়ে আলমারি খুলুন", s.cupOpen], ["ভাঙা ফোনটা নিন (প্রমাণ ১)", s.hasPhone], ["আয়নার ফ্রেম খুলুন", s.mirrorOff], ["ঘর থেকে বেরিয়ে যান", s.over && s.mirrorOff], ["গোপন: আয়নার পেছনটা দেখুন", !!this.game.state.clues.a]];
   }
   inv() {
     const s = this.st, a = []; if (s.hasBox) a.push("দেশলাই"); if (s.hasDriver) a.push("স্ক্রু-ড্রাইভার"); if (s.hasPhone) a.push("ভাঙা ফোন (প্রমাণ ১)");

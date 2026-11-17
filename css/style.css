@@ -89,3 +89,32 @@ button.ghost { font: inherit; font-size: 15px; color: #a79f90; background: none;
 #howto h4 { color: #e9a45a; font-size: 17px; margin: 8px 0 3px; } #howto ul { list-style: none; font-size: 15px; color: #b8b0a0; line-height: 1.65; }
 #howto b { color: #f1e7d0; }
 @media (max-width: 640px) { #howto .cols { grid-template-columns: 1fr; } }
+
+#vig { position: fixed; inset: 0; pointer-events: none; z-index: 4; background: radial-gradient(ellipse at 50% 50%, transparent 52%, rgba(0,0,0,.5) 100%); }
+#rotate { display: none; position: fixed; inset: 0; z-index: 30; background: #05060a; align-items: center; justify-content: center; text-align: center; font-size: 22px; color: #e9c48f; padding: 30px; }
+@media (orientation: portrait) and (pointer: coarse) { #rotate { display: flex; } }
+#inv b.mt { margin-top: 8px; } #inv span.done { color: #8fd08f; }
+#inv { max-width: min(360px, 60vw); text-align: left; }
+#stick { left: 22px; bottom: 22px; width: 132px; height: 132px; }
+#touch button { width: 66px; height: 66px; font-size: 15px; -webkit-tap-highlight-color: transparent; }
+#touch button:active { background: rgba(233,164,90,.5); }
+#btnE { right: 18px !important; bottom: 20px; width: 82px !important; height: 82px !important; font-size: 18px !important; background: rgba(233,164,90,.22) !important; }
+#btnF { right: 112px !important; bottom: 16px; }
+#btnCrouch { right: 22px !important; bottom: 114px; }
+#btnRun { right: 100px !important; bottom: 94px; }
+#btnM { right: 180px !important; bottom: 16px; }
+#touch button.sm { width: 46px; height: 40px; border-radius: 8px; top: 8px; bottom: auto; font-size: 14px; }
+#btnPause { right: 10px !important; } #btnHelpT { right: 62px !important; } #btnInv { right: 114px !important; width: 58px !important; }
+@media (pointer: coarse) {
+  #objective { font-size: 14px; max-width: 52%; top: 8px; left: 12px; } #meters { top: 56px; left: 12px; } .meter div, #burn { width: 90px; }
+  #subtitle { font-size: 15px; bottom: 30%; max-width: 62%; } #tip { font-size: 13px; top: 20%; max-width: 62%; } #prompt { font-size: 16px; top: 60%; }
+  #inv { top: 54px; right: 10px; font-size: 13px; } #matchHud { right: auto; left: 170px; bottom: 12px; } #stance { left: 170px; bottom: 44px; font-size: 13px; }
+  #toast { font-size: 20px; top: 26%; } #flame { right: 34%; }
+  .modal { padding: 14px 16px; max-height: 94vh; overflow: auto; } .modal h2 { font-size: 26px; } .modal p { font-size: 15px; margin-bottom: 10px; } .btns button { font-size: 15px; min-width: 220px; padding: 8px 14px; }
+  #kpGrid { grid-template-columns: repeat(3, 58px); gap: 6px; } #kpGrid button { height: 42px; } #kpDisp { font-size: 30px; margin-bottom: 8px; }
+}
+@media (max-height: 480px) {
+  #overlay { align-items: flex-start; overflow: auto; } .panel { padding: 10px; } h1 { font-size: 44px; } .sub { margin-bottom: 10px; font-size: 15px; }
+  #help { display: none; } .credit { margin-top: 8px; } button.big { font-size: 17px; padding: 7px 26px; }
+  #howto { align-items: flex-start; } #howto .sheet { padding: 12px 16px; } #howto h2 { font-size: 22px; } #howto .lead { font-size: 13px; margin: 4px 0 6px; } #howto ul { font-size: 13px; line-height: 1.5; } #howto h4 { font-size: 14px; margin: 5px 0 2px; }
+}

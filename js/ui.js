@@ -48,7 +48,13 @@ export class UI {
     const el = $("bar_" + id); el.classList.toggle("hidden", frac === null); if (frac === null) return;
     el.firstElementChild.textContent = label; el.lastElementChild.firstElementChild.style.width = Math.round(Math.max(0, Math.min(1, frac)) * 100) + "%";
   }
-  inventory(list) { this.inv = list; $("inv").innerHTML = "<b>সঙ্গে আছে</b>" + (list.length ? list.map(x => `<span>${x}</span>`).join("") : "<span>কিছু নেই</span>"); }
+  inventory(list) { this.inv = list; this._bag(); }
+  missions(list) { this.mis = list; this._bag(); }
+  _bag() {
+    const inv = this.inv || [], mis = this.mis || [];
+    $("inv").innerHTML = "<b>সঙ্গে আছে</b>" + (inv.length ? inv.map(x => `<span>${x}</span>`).join("") : "<span>কিছু নেই</span>")
+      + (mis.length ? "<b class='mt'>মিশন</b>" + mis.map(([t, d]) => `<span class="${d ? "done" : ""}">${d ? "✓" : "○"} ${t}</span>`).join("") : "");
+  }
   toggleInv() { $("inv").classList.toggle("hidden"); }
   fade(on, text = "") { $("fade").classList.toggle("on", on); $("fadeText").textContent = text; }
 
