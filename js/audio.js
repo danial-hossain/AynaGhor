@@ -1,6 +1,6 @@
 // All sound is synthesised with the Web Audio API (no audio files).
 export class GameAudio {
-  constructor() { this.ctx = null; this.timers = []; }
+  constructor() { this.ctx = null; this.timers = []; this.outdoor = true; }
   start() {
     if (this.ctx) { this.ctx.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
@@ -48,7 +48,7 @@ export class GameAudio {
     }
   }
   bell() {
-    if (!this.ctx) return; const ctx = this.ctx, out = this._pan(Math.random() * 1.6 - 0.8); let t = ctx.currentTime + 0.05;
+    if (!this.ctx || !this.outdoor) return; const ctx = this.ctx, out = this._pan(Math.random() * 1.6 - 0.8); let t = ctx.currentTime + 0.05;
     for (let i = 0; i < 2 + Math.floor(Math.random() * 3); i++) {
       for (const f of [2150, 2890, 4300]) {
         const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.value = f;
@@ -57,5 +57,26 @@ export class GameAudio {
       }
       t += 0.16 + Math.random() * 0.08;
     }
+  }
+  // ---- one-shot effects
+  _tone(f, dur, gain, type = "sine", f2) {
+    if (!this.ctx) return; const ctx = this.ctx, o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime;
+    o.type = type; o.frequency.setValueAtTime(f, t); if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + dur);
+    g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.02);
+  }
+  match() { if (!this.ctx) return; this._burst(0.25, 5200, 0.8, 0.22, null, "highpass"); setTimeout(() => this._burst(0.5, 900, 0.5, 0.08, null, "lowpass"), 120); }
+  blow() { if (this.ctx) this._burst(0.3, 700, 0.6, 0.12, null, "lowpass"); }
+  thud(gain) { if (!this.ctx) return; this._burst(0.12, 90, 1.0, gain, null, "lowpass"); this._tone(70, 0.12, gain * 0.7, "sine", 45); }
+  beep(ok = true) { this._tone(ok ? 880 : 180, ok ? 0.07 : 0.3, 0.06, ok ? "square" : "sawtooth"); }
+  click() { if (this.ctx) this._burst(0.04, 2400, 3, 0.2); }
+  unlock() { this.click(); setTimeout(() => this._tone(140, 0.25, 0.12, "triangle", 90), 80); }
+  screw() { if (!this.ctx) return; for (let i = 0; i < 5; i++) setTimeout(() => this._burst(0.05, 3000 + i * 250, 6, 0.1), i * 90); }
+  creak() { this._tone(210, 0.6, 0.05, "sawtooth", 150); }
+  heartbeat() { this._tone(60, 0.14, 0.35, "sine", 40); setTimeout(() => this._tone(52, 0.16, 0.25, "sine", 36), 190); }
+  garble(sec = 4) {       // broken voice message: chopped, band-limited noise
+    if (!this.ctx) return; const n = Math.floor(sec / 0.13);
+    for (let i = 0; i < n; i++) if (Math.random() < 0.7) setTimeout(() => this._burst(0.1, 500 + Math.random() * 1400, 4, 0.12), i * 130);
+    setTimeout(() => this.beep(false), sec * 1000);
   }
 }

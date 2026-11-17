@@ -7,7 +7,7 @@ export class Collision {
     this.grid = new Map();
     this.polys = [];     // Float32Array [x0,z0,x1,z1,...]
     this.circles = [];   // [x, z, r]
-    this.bounds = data.bounds;
+    this.bounds = data.bounds; this.margin = data.margin ?? 6;
     for (const b of data.buildings) this.addPoly(Float32Array.from(b.slice(1)));
     for (const [x, z] of data.pillars) this.addPoly(Float32Array.from([x - 1, z - 1, x + 1, z - 1, x + 1, z + 1, x - 1, z + 1]));
   }
@@ -80,7 +80,7 @@ export class Collision {
         }
       if (!moved) break;
     }
-    const b = this.bounds, m = 6;
+    const b = this.bounds, m = this.margin;
     pos.x = Math.max(b[0] + m, Math.min(b[2] - m, pos.x));
     pos.z = Math.max(b[1] + m, Math.min(b[3] - m, pos.z));
   }

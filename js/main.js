@@ -4,13 +4,16 @@ import { Collision } from "./collision.js";
 import { Player, setupTouch } from "./player.js";
 import { buildWorld } from "./world.js";
 import { GameAudio } from "./audio.js";
+import { UI } from "./ui.js";
+import { Act1 } from "./act1.js";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
 const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 1.5));
+const BASE_PR = Math.min(devicePixelRatio || 1, 1.25); let pr = BASE_PR;
+renderer.setPixelRatio(pr);
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(72, 1, 0.12, 900);
@@ -18,9 +21,19 @@ function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.asp
 addEventListener("resize", resize); resize();
 
 const audio = new GameAudio();
-const game = window.__game = { ready: false, running: false, fps: 0, scene, camera, renderer };
-
+const game = window.__game = { ready: false, running: false, fps: 0, scene, camera, renderer, audio, modes: {}, mode: null, cur: null,
+  state: { proof1: false, proof2: false, prisoner: false, clues: {}, matches: 0 } };
+const ui = game.ui = new UI(game);
 const setLoad = (f, text) => { $("bar").firstElementChild.style.width = Math.round(f * 100) + "%"; if (text) $("loadText").textContent = text; };
+
+game.save = extra => { try { localStorage.setItem("aynaghor_save", JSON.stringify({ ...game.state, ...extra })); } catch (e) {} };
+game.loadSave = () => { try { return JSON.parse(localStorage.getItem("aynaghor_save") || "null"); } catch (e) { return null; } };
+game.relock = () => { if (!isTouch && game.running && canvas.requestPointerLock) { try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} } };
+game.setMode = (name, opts) => {
+  ui.fade(false); ui.prompt(""); ui.objective(""); ui.status(""); ui.matches(null); ui.flame(false);
+  for (const b of ["noise", "seen", "wanted"]) ui.bar(b, null);
+  game.mode = name; game.cur = game.modes[name]; game.cur.start(opts || {});
+};
 
 async function boot() {
   const fontsReady = Promise.race([
@@ -36,52 +49,78 @@ async function boot() {
   const collision = new Collision(data);
   const world = buildWorld(scene, data, gltf, collision);
   const player = new Player(camera, collision, canvas);
-  player.teleport(data.spawn.x, data.spawn.z, Math.atan2(data.spawn.x, data.spawn.z));
   player.onStep = (run, crouch) => audio.step(run, crouch);
   Object.assign(game, { data, world, player, collision });
+  const ctx = { game, camera, player, audio, ui, data, world, collision, scene };
 
-  // landmark name toasts
+  // ---- free-walk mode on the street
   const lm = data.landmarks, places = [
     { n: "মিরপুর ১০ গোলচত্বর", x: 0, z: 0, r: 32 },
     lm.station && { n: "মিরপুর ১০ মেট্রো স্টেশন", x: lm.station.x, z: lm.station.z, r: 45 },
     lm.stadium && { n: "শের-ই-বাংলা স্টেডিয়াম", x: lm.stadium[0], z: lm.stadium[1], r: 170 }].filter(Boolean);
-  let here = null, toastT = 0;
-  const toast = t => { $("toast").textContent = t; $("toast").classList.add("show"); toastT = 3.5; };
+  let here = null;
+  game.landmarks = () => { const p = places.find(q => Math.hypot(player.pos.x - q.x, player.pos.z - q.z) < q.r) || null; if (p !== here) { here = p; if (p) ui.toast(p.n); } };
+  game.streetCam = () => { camera.near = 0.12; camera.updateProjectionMatrix(); player.col = collision; audio.outdoor = true; };
+  game.modes.walk = {
+    scene,
+    start() { game.streetCam(); player.crouch = false; player.teleport(data.spawn.x, data.spawn.z, Math.atan2(data.spawn.x, data.spawn.z)); player.enabled = true; ui.inventory([]); },
+    update(dt) { world.update(dt, camera); game.landmarks(); ui.status(player.crouch ? "বসে চলছেন" : player.running && player.speed > 3.5 ? "দৌড়াচ্ছেন" : ""); },
+    onKey() {},
+  };
+  game.modes.act1 = new Act1(ctx);
+  game.ctx = ctx;
 
-  function start() {
-    overlay.classList.add("hidden"); hud.classList.remove("hidden");
-    player.enabled = true; game.running = true; audio.start();
-    if (!isTouch && canvas.requestPointerLock) { try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
-  }
-  function pause() {
+  // ---- menu / pause
+  const menu = (paused) => {
+    overlay.classList.remove("hidden"); $("menu").classList.remove("hidden");
+    $("btnResume").classList.toggle("hidden", !paused); $("btnContinue").classList.toggle("hidden", paused || !game.loadSave());
+  };
+  const go = (name, opts) => { overlay.classList.add("hidden"); hud.classList.remove("hidden"); game.running = true; audio.start(); game.relock(); if (name) game.setMode(name, opts); else if (!ui.modal) player.enabled = true; };
+  game.start = go;
+  game.pause = () => { if (!game.running) return; game.wasEnabled = player.enabled; player.enabled = false; game.running = false; menu(true); };
+  $("btnResume").onclick = () => { go(null); player.enabled = game.wasEnabled && !ui.modal; };
+  $("btnNew").onclick = () => { game.state = { proof1: false, proof2: false, prisoner: false, clues: {}, matches: 0 }; go(game.modes.intro ? "intro" : "act1"); };
+  $("btnWalk").onclick = () => go("walk");
+  $("btnContinue").onclick = () => { const s = game.loadSave() || {}; Object.assign(game.state, s); const m = "act" + (s.act || 1); go(game.modes[m] ? m : "act1", { resume: true }); };
+  document.addEventListener("pointerlockchange", () => { if (!isTouch && document.pointerLockElement !== canvas && !game.noLock && !ui.modal) game.pause(); });
+  game.key = code => {
     if (!game.running) return;
-    player.enabled = false; game.running = false; overlay.classList.remove("hidden");
-    $("start").textContent = "চালিয়ে যান";
+    if (ui.keys) { ui.keys(code); return; }
+    if (code === "Tab") ui.toggleInv();
+    if (game.cur && game.cur.onKey) game.cur.onKey(code);
+  };
+  addEventListener("keydown", e => {
+    if (e.code === "F3") { e.preventDefault(); $("debug").classList.toggle("hidden"); }
+    if (!e.repeat) game.key(e.code);
+  });
+  if (isTouch) {
+    $("touch").classList.remove("hidden"); $("help").classList.add("hidden"); setupTouch(player, hud);
+    for (const [id, code] of [["btnE", "KeyE"], ["btnF", "KeyF"]]) $(id).addEventListener("touchstart", e => { e.preventDefault(); game.key(code); }, { passive: false });
   }
-  game.start = start; game.pause = pause;
-  $("start").addEventListener("click", start);
-  document.addEventListener("pointerlockchange", () => { if (!isTouch && document.pointerLockElement !== canvas && !game.noLock) pause(); });
-  addEventListener("keydown", e => { if (e.code === "F3") { e.preventDefault(); $("debug").classList.toggle("hidden"); } });
-  if (isTouch) { $("touch").classList.remove("hidden"); $("help").classList.add("hidden"); setupTouch(player, hud); }
+  setLoad(1); $("loading").classList.add("hidden"); menu(false);
 
-  setLoad(1); $("loading").classList.add("hidden"); $("start").classList.remove("hidden");
-
-  let last = performance.now(), acc = 0, frames = 0, t0 = last;
+  let last = performance.now(), frames = 0, t0 = last;
   function frame(now) {
     requestAnimationFrame(frame);
     const dt = Math.min(0.05, (now - last) / 1000); last = now;
-    player.update(dt); world.update(dt, camera);
-    renderer.render(scene, camera);
+    const cur = game.cur || game.modes.walk;
+    if (game.running || !game.cur) {
+      player.update(game.running ? dt : 0);
+      if (game.running) { cur.update(dt); ui.tick(dt); }
+      else world.update(dt, camera);
+      const fear = cur.fear || 0;
+      if (fear > 0.45) { const a = (fear - 0.45) * 0.02; camera.rotation.x += (Math.random() - 0.5) * a; camera.rotation.y += (Math.random() - 0.5) * a; }
+    }
+    renderer.render(cur.scene, camera);
     frames++;
     if (now - t0 >= 500) {
       game.fps = Math.round(frames * 1000 / (now - t0)); t0 = now; frames = 0;
-      $("debug").textContent = `${game.fps} fps\nx ${player.pos.x.toFixed(1)}  z ${player.pos.z.toFixed(1)}\ndraw ${renderer.info.render.calls}  tri ${renderer.info.render.triangles}`;
-    }
-    if (game.running) {
-      $("stance").textContent = player.crouch ? "বসে চলছেন" : player.running && player.speed > 3.5 ? "দৌড়াচ্ছেন" : "";
-      const p = places.find(q => Math.hypot(player.pos.x - q.x, player.pos.z - q.z) < q.r) || null;
-      if (p !== here) { here = p; if (p) toast(p.n); }
-      if (toastT > 0 && (toastT -= dt) <= 0) $("toast").classList.remove("show");
+      // dynamic resolution: keep the frame rate playable on weak GPUs
+      if (game.running && !game.fixedPR) {
+        if (game.fps < 28 && pr > 0.5) { pr = Math.max(0.5, pr * 0.85); renderer.setPixelRatio(pr); resize(); }
+        else if (game.fps > 55 && pr < BASE_PR) { pr = Math.min(BASE_PR, pr * 1.08); renderer.setPixelRatio(pr); resize(); }
+      }
+      $("debug").textContent = `${game.fps} fps  res ${pr.toFixed(2)}\nx ${player.pos.x.toFixed(1)}  z ${player.pos.z.toFixed(1)}  ${game.mode || ""}\ndraw ${renderer.info.render.calls}  tri ${renderer.info.render.triangles}`;
     }
   }
   requestAnimationFrame(frame);

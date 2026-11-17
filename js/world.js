@@ -248,7 +248,7 @@ export function buildWorld(scene, data, gltf, collision) {
   haloPts.frustumCulled = false; haloPts.renderOrder = 3; scene.add(haloPts);
 
   // ---- pool of real lights that follows the player to the nearest light sources
-  const POOL = 6, pool = [];
+  const POOL = 4, pool = [];
   for (let i = 0; i < POOL; i++) { const l = new THREE.PointLight(SODIUM, 0, 30, 1.4); scene.add(l); pool.push(l); }
   let timer = 0;
   function update(dt, cam) {
@@ -259,7 +259,7 @@ export function buildWorld(scene, data, gltf, collision) {
     for (let i = 0; i < POOL; i++) {
       const s = near[i] && near[i][0] < 70 * 70 ? near[i][1] : null, l = pool[i];
       if (!s) { l.intensity = 0; continue; }
-      l.position.set(s[0], s[1], s[2]); l.color.set(s[3]); l.distance = s[4]; l.intensity = s[4] * 1.0;
+      l.position.set(s[0], s[1], s[2]); l.color.set(s[3]); l.distance = s[4]; l.intensity = s[4] * 0.8;
     }
   }
   return { update, counts: { lamps: data.lamps.length, signs: data.signs.length, props: data.props.length, poles: poleItems.length } };
