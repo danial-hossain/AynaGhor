@@ -1,0 +1,41 @@
+@font-face { font-family: "Hind Siliguri"; src: url("../assets/fonts/HindSiliguri-Regular.ttf") format("truetype"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Hind Siliguri"; src: url("../assets/fonts/HindSiliguri-Bold.ttf") format("truetype"); font-weight: 700; font-display: swap; }
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; background: #05060a; color: #e8e2d4;
+  font-family: "Hind Siliguri", "Noto Sans Bengali", sans-serif; -webkit-user-select: none; user-select: none; touch-action: none; }
+#c { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
+.hidden { display: none !important; }
+
+#overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(ellipse at 50% 40%, rgba(20,16,10,.72), rgba(2,3,6,.94)); z-index: 10; }
+.panel { text-align: center; padding: 24px; max-width: 520px; width: 100%; }
+h1 { font-size: clamp(56px, 12vw, 104px); font-weight: 700; letter-spacing: 2px; color: #f1e7d0; line-height: 1.15;
+  text-shadow: 0 0 28px rgba(255,150,60,.35); }
+.sub { color: #c98a4a; font-size: 18px; margin-bottom: 28px; }
+#bar { height: 4px; background: #2a2620; border-radius: 2px; overflow: hidden; margin: 0 auto 10px; width: 240px; }
+#bar i { display: block; height: 100%; width: 0; background: #e08a3c; transition: width .2s; }
+#loadText { font-size: 15px; color: #9a9284; }
+#start { font: inherit; font-size: 22px; font-weight: 700; color: #14100a; background: #e9a45a; border: 0; border-radius: 6px;
+  padding: 10px 44px; cursor: pointer; }
+#start:hover { background: #ffbd73; }
+#help { list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; margin: 28px auto 0; max-width: 340px;
+  font-size: 15px; color: #a79f90; text-align: left; }
+#help b { color: #e8e2d4; font-weight: 700; margin-right: 6px; }
+.credit { margin-top: 26px; font-size: 12px; color: #6f695e; }
+
+#hud { position: fixed; inset: 0; pointer-events: none; z-index: 5; }
+#toast { position: absolute; top: 9%; left: 50%; transform: translateX(-50%); font-size: 26px; font-weight: 700; color: #f1e7d0;
+  text-shadow: 0 2px 12px #000; opacity: 0; transition: opacity .8s; white-space: nowrap; }
+#toast.show { opacity: 1; }
+#stance { position: absolute; left: 18px; bottom: 16px; font-size: 15px; color: #b8b0a0; text-shadow: 0 1px 4px #000; }
+#debug { position: absolute; left: 12px; top: 10px; font: 12px/1.5 monospace; color: #9fe6a0; background: rgba(0,0,0,.45); padding: 4px 8px; white-space: pre; }
+
+#touch { position: absolute; inset: 0; }
+#stick { position: absolute; left: 26px; bottom: 30px; width: 120px; height: 120px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.25); background: rgba(255,255,255,.06); pointer-events: auto; }
+#knob { position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; margin: -26px 0 0 -26px; border-radius: 50%; background: rgba(255,255,255,.35); }
+#touch button { position: absolute; right: 24px; width: 72px; height: 72px; border-radius: 50%; border: 2px solid rgba(255,255,255,.3);
+  background: rgba(255,255,255,.08); color: #fff; font: inherit; font-size: 16px; pointer-events: auto; }
+#touch button.on { background: rgba(233,164,90,.55); }
+#btnRun { bottom: 120px; } #btnCrouch { bottom: 34px; }
