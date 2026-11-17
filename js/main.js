@@ -6,6 +6,7 @@ import { buildWorld } from "./world.js";
 import { GameAudio } from "./audio.js";
 import { UI } from "./ui.js";
 import { Act1 } from "./act1.js";
+import { Act2 } from "./act2.js";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
@@ -68,6 +69,7 @@ async function boot() {
     onKey() {},
   };
   game.modes.act1 = new Act1(ctx);
+  game.modes.act2 = new Act2(ctx);
   game.ctx = ctx;
 
   // ---- menu / pause

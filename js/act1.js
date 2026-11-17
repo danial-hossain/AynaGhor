@@ -97,6 +97,8 @@ export class Act1 {
     const hole = new THREE.Mesh(new THREE.PlaneGeometry(0.62, 0.62), new THREE.MeshBasicMaterial({ color: 0x020202 }));
     hole.position.set(-W + 0.012, 1.25, MIRROR_Z); hole.rotation.y = Math.PI / 2; s.add(hole);
     this.mirrorPos = new THREE.Vector3(-W + 0.05, 1.45, MIRROR_Z);
+    this.planks = new THREE.Group(); s.add(this.planks);
+    for (let k = 0; k < 4; k++) box(0.04, 0.16, 0.9, mWood, -W + 0.03, 0.98 + k * 0.19, MIRROR_Z + (k % 2 ? 0.04 : -0.04), this.planks).rotation.x = (k % 2 ? 0.06 : -0.05);
 
     // code on the east wall, opposite the mirror
     this.codeMat = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false });
@@ -115,36 +117,40 @@ export class Act1 {
       { pos: this.matchbox.position, range: 1.7, dot: 0.5,
         label: () => P.st.hasBox ? null : P.player.crouch ? "দেশলাইয়ের বাক্স নিন" : "বিছানার নিচে কিছু একটা আছে… (C চেপে নিচু হন)", act: () => P.player.crouch && P.takeBox() },
       { pos: this.bed, range: 1.6, dot: 0.6, label: () => "বিছানায় শুয়ে পড়ুন", act: () => P.lie(true) },
-      { pos: new THREE.Vector3(1.2, 1.1, -D), range: 1.5, label: () => "দরজা", act: () => P.ui.say("বাইরে থেকে তালা দেওয়া। নড়ছেই না।") },
+      { pos: new THREE.Vector3(1.2, 1.1, -D), range: 1.6, label: () => P.st.blocked && P.st.hasDriver ? `দরজার কব্জার স্ক্রু খুলুন (${bn(P.st.hinges)}টা বাকি)` : "দরজা",
+        act: () => { const s = P.st; if (!(s.blocked && s.hasDriver)) return P.ui.say("বাইরে থেকে তালা দেওয়া। নড়ছেই না।"); if (s.ev !== "idle") return P.ui.say("এখন না! সে দরজার ঠিক ওপাশে।"); s.hinges--; P.audio.screw(); if (s.hinges <= 0) P.finish(); } },
       { pos: this.codePos, range: 2.6, label: () => P.lightLevel() > 0.3 ? "দেয়ালের লেখা দেখুন" : null,
         act: () => { P.st.sawCode = true; P.ui.say("কেউ ইটের টুকরো দিয়ে কিছু লিখে গেছে… কিন্তু অক্ষরগুলো উল্টো। সোজা তাকিয়ে পড়া যাচ্ছে না।", 6); P.objective(); } },
       { pos: this.cup, range: 1.5, label: () => P.st.cupOpen ? null : "আলমারির তালা (৪ সংখ্যার কোড)", act: () => P.ui.openKeypad(c => P.tryCode(c)) },
       { pos: this.screwdriver.position, range: 1.5, label: () => P.st.cupOpen && !P.st.hasDriver ? "স্ক্রু-ড্রাইভার নিন" : null, act: () => P.take("driver") },
       { pos: this.phone.position, range: 1.5, label: () => P.st.cupOpen && !P.st.hasPhone ? "ভাঙা ফোনটা নিন" : null, act: () => P.take("phone") },
       { pos: this.mirrorPos, range: 1.5,
-        label: () => P.st.mirrorOff ? "ফোকর দিয়ে বেরিয়ে যান" : P.st.hasDriver ? `ফ্রেমের স্ক্রু খুলুন (${bn(P.st.screws)}টা বাকি)` : "আয়না", act: () => P.useMirror() },
+        label: () => P.st.blocked ? "ফোকরটা তক্তা মেরে বন্ধ করা" : P.st.mirrorOff ? (P.st.lit && !P.game.state.clues.a ? "আয়নার পেছনটা দেখুন" : "ফোকর দিয়ে বেরিয়ে যান") : P.st.hasDriver ? `ফ্রেমের স্ক্রু খুলুন (${bn(P.st.screws)}টা বাকি)` : "আয়না", act: () => P.useMirror() },
     ];
   }
 
-  start() {
-    const code = String(1000 + Math.floor(Math.random() * 9000));
+  start(opts = {}) {
+    const gs = this.game.state, code = String(1000 + Math.floor(Math.random() * 9000));
     this.st = { code, matches: 0, hasBox: false, lit: false, burn: 0, everLit: false, sawCode: false, cupOpen: false, hasDriver: false, hasPhone: false,
-      screws: 4, mirrorOff: false, lying: false, ev: "idle", evT: 0, next: 1e9, beat: 0, stepT: 0, over: false, doorAng: 0 };
+      screws: 4, mirrorOff: false, lying: false, ev: "idle", evT: 0, next: 1e9, beat: 0, stepT: 0, over: false, blocked: !!opts.blocked, hinges: 3 };
+    const s0 = this.st; this.planks.visible = s0.blocked; this.mirror.visible = !s0.blocked;
+    if (s0.blocked) Object.assign(s0, { hasBox: true, matches: Math.max(3, gs.matches), everLit: true, cupOpen: true, hasDriver: true, hasPhone: gs.proof1, sawCode: true, next: 30 });
     if (this.codeMat.map) this.codeMat.map.dispose();
     this.codeMat.map = codeTex(code); this.codeMat.needsUpdate = true;
-    this.matchbox.visible = true; this.screwdriver.visible = this.phone.visible = false; this.cupDoor.rotation.y = 0;
+    this.matchbox.visible = !s0.blocked; this.screwdriver.visible = this.phone.visible = false; this.cupDoor.rotation.y = 0;
     this.mirror.position.set(-W + 0.03, 1.45, MIRROR_Z); this.mirror.rotation.set(0, Math.PI / 2, 0); this.screws.forEach(m => m.visible = true);
     this.slotLight.intensity = 0; this.slot.material.color.set(0x000000);
     this.player.col = this.col; this.player.crouch = false; this.player.teleport(-0.2, 0.9, 0.6); this.player.pitch = 0; this.player.enabled = true;
     this.camera.near = 0.05; this.camera.updateProjectionMatrix();
     this.audio.outdoor = false;
-    this.ui.inventory([]); this.ui.matches(null); this.objective();
-    this.ui.say("মাথাটা ঝিমঝিম করছে… কোথায় আমি? চারদিক ঘুটঘুটে অন্ধকার।", 6);
-    try { localStorage.setItem("aynaghor_save", JSON.stringify({ act: 1 })); } catch (e) {}
+    this.inv(); this.ui.matches(s0.hasBox ? s0.matches : null, 0); this.objective();
+    this.ui.say(s0.blocked ? "আবার সেই ঘর। ফোকরটা বন্ধ করে দিয়েছে… কিন্তু স্ক্রু-ড্রাইভারটা টের পায়নি।" : "মাথাটা ঝিমঝিম করছে… কোথায় আমি? চারদিক ঘুটঘুটে অন্ধকার।", 6);
+    this.game.save({ act: 1 });
   }
 
   objective() {
     const s = this.st;
+    if (s.blocked) return this.ui.objective("অন্য পথ খুঁজুন। দরজাটা ভালো করে দেখুন");
     this.ui.objective(!s.hasBox ? "আলোর ব্যবস্থা করুন। হাতড়ে ঘরটা খুঁজে দেখুন" : !s.everLit ? "F চেপে একটা কাঠি জ্বালান"
       : !s.cupOpen ? (s.sawCode ? "উল্টো লেখাটা পড়ার উপায় বের করুন" : "ঘরটা ভালো করে দেখুন। বেরোনোর পথ খুঁজুন")
       : !(s.hasDriver && s.hasPhone) ? "আলমারির ভেতরের জিনিসগুলো নিন" : !s.mirrorOff ? "স্ক্রু-ড্রাইভারটা কোথায় কাজে লাগে?" : "ফোকর দিয়ে বেরিয়ে যান");
@@ -184,6 +190,8 @@ export class Act1 {
   }
   useMirror() {
     const s = this.st;
+    if (s.blocked) return this.ui.say("মোটা তক্তা, পেরেক মারা। এদিক দিয়ে আর হবে না।");
+    if (s.mirrorOff && s.lit && !this.game.state.clues.a) { this.game.state.clues.a = 1; return this.ui.say("আয়নার পেছনে পুরনো কালিতে লেখা: “যে তোমাকে এনেছে, সে তোমাকে চেনে”", 6); }
     if (s.mirrorOff) return this.finish();
     if (!s.hasDriver) return this.ui.say("পুরনো একটা আয়না। ফ্রেমটা চারটা স্ক্রু দিয়ে দেয়ালে আটকানো। পেছনটা ফাঁপা শোনাচ্ছে।", 5);
     s.screws--; this.screws[s.screws].visible = false; this.audio.screw();
@@ -202,10 +210,10 @@ export class Act1 {
     this.ui.result("ধরা পড়েছেন", why, [["আবার চেষ্টা করুন", () => this.start()]]);
   }
   finish() {
-    const s = this.st; if (s.over) return; s.over = true; this.player.enabled = false;
-    try { localStorage.setItem("aynaghor_save", JSON.stringify({ act: 2, proof1: s.hasPhone })); } catch (e) {}
-    this.ui.result("প্রথম অঙ্ক শেষ", `আপনি ঘর থেকে বেরিয়ে এসেছেন${s.hasPhone ? "। প্রমাণ ১ আপনার কাছে আছে" : ", কিন্তু ফোনটা ফেলে এসেছেন"}। সামনে অন্ধকার বাড়ি… (দ্বিতীয় অঙ্ক শিগগিরই আসছে)`,
-      [["আবার খেলুন", () => this.start()]]);
+    const s = this.st, gs = this.game.state; if (s.over) return; s.over = true; this.player.enabled = false;
+    gs.proof1 = s.hasPhone; gs.matches = s.matches; this.game.save({ act: 2 });
+    this.ui.fade(true, s.blocked ? "কব্জা খুলে দরজাটা আলগোছে নামিয়ে রাখলেন…" : "সরু ফোকর দিয়ে হামাগুড়ি দিয়ে এগোচ্ছেন…" + (s.hasPhone ? "" : "\n(ভাঙা ফোনটা ঘরেই রয়ে গেল)"));
+    setTimeout(() => this.game.setMode("act2"), 3500);
   }
 
   onKey(code) {
