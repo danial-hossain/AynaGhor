@@ -242,12 +242,30 @@ for r in sorted(roads, key=lambda r: r["rank"]):
     else: strip("path", r["p"], r["w"], 0.09)
 
 # buildings
+def _pip(p, poly):
+    c = False; j = len(poly) - 1
+    for i in range(len(poly)):
+        a_, b_ = poly[i], poly[j]
+        if (a_[1] > p[1]) != (b_[1] > p[1]) and p[0] < (b_[0]-a_[0]) * (p[1]-a_[1]) / (b_[1]-a_[1]) + a_[0]: c = not c
+        j = i
+    return c
+road_pts = []
+for r in roads:
+    if r["rank"] < 2: continue
+    for a_, c_ in zip(r["p"], r["p"][1:]):
+        L_ = math.hypot(c_[0]-a_[0], c_[1]-a_[1]); n_ = max(1, int(L_ // 4))
+        road_pts += [(a_[0] + (c_[0]-a_[0]) * k / n_, a_[1] + (c_[1]-a_[1]) * k / n_) for k in range(n_ + 1)]
+road_pts.sort()
 PAL = [(236, 226, 198), (232, 232, 226), (176, 180, 184), (236, 198, 168), (182, 208, 228), (228, 188, 192), (208, 188, 158), (188, 216, 184), (214, 206, 190), (198, 170, 150)]
 buildings = []   # (h, poly)
 for wid, (pts, t, closed) in sorted(ways.items()):
     if "building" not in t or not closed: continue
+    try: elevated = float(t.get("layer", "0")) > 0
+    except ValueError: elevated = False
+    if elevated or t["building"] in ("train_station", "roof", "bridge"): continue     # elevated structures must not block the street
     poly = clean(pts)
     if len(poly) < 3: continue
+    if any(_pip(p, poly) for p in road_pts if min(q[0] for q in poly) <= p[0] <= max(q[0] for q in poly)): continue   # mapped across a street
     if area2(poly) < 0: poly = poly[::-1]
     cx = sum(p[0] for p in poly)/len(poly); cz = sum(p[1] for p in poly)/len(poly)
     if not (XMIN <= cx <= XMAX and YMIN <= cz <= YMAX): continue

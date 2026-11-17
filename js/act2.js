@@ -65,7 +65,7 @@ function tex(base, vary) {
   for (let i = 0; i < 2500; i++) { g.fillStyle = `rgba(${Math.random() < 0.5 ? "0,0,0" : "255,255,255"},${Math.random() * vary})`; g.fillRect(Math.random() * 128, Math.random() * 128, 2, 2); }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-function figure(color) {
+export function figure(color) {
   const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color });
   const add = (w, h, d, y) => { const o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.y = y; g.add(o); };
   add(0.46, 0.75, 0.26, 1.15); add(0.4, 0.8, 0.24, 0.4);

@@ -79,4 +79,13 @@ export class GameAudio {
     for (let i = 0; i < n; i++) if (Math.random() < 0.7) setTimeout(() => this._burst(0.1, 500 + Math.random() * 1400, 4, 0.12), i * 130);
     setTimeout(() => this.beep(false), sec * 1000);
   }
+  engine(level) {         // nearby vehicle rumble, 0..1
+    if (!this.ctx) return; const ctx = this.ctx;
+    if (!this._eng) {
+      const g = ctx.createGain(); g.gain.value = 0; const lp = ctx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 240;
+      for (const f of [41, 62, 83.5]) { const o = ctx.createOscillator(); o.type = "sawtooth"; o.frequency.value = f; o.connect(lp); o.start(); }
+      lp.connect(g); g.connect(this.master); this._eng = g;
+    }
+    this._eng.gain.setTargetAtTime(Math.max(0, Math.min(1, level)) * 0.16, ctx.currentTime, 0.15);
+  }
 }

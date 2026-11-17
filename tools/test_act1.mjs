@@ -22,6 +22,6 @@ r = await ev(() => { const g = window.__game, a = g.cur; g.key("Digit1"); a.take
 console.log("event while hiding", JSON.stringify(r));
 r = await ev(() => { const g = window.__game, a = g.cur; g.key("KeyE"); a.tryCode(a.st.code); a.take("driver"); for (let i = 0; i < 4; i++) a.useMirror(); return { mirrorOff: a.st.mirrorOff }; });
 await ev(() => { const g = window.__game, p = g.player; p.teleport(-0.6, 0.6, Math.PI / 2); g.key("KeyF"); }); await shot("a1_hole");
-r = await ev(() => { const g = window.__game, a = g.cur; a.useMirror(); return { over: a.st.over, title: document.getElementById("resTitle").textContent, save: localStorage.getItem("aynaghor_save") }; });
+r = await ev(() => { const g = window.__game, a = g.cur; a.useMirror(); a.useMirror(); return { clue: g.state.clues.a, over: a.st.over, title: document.getElementById("resTitle").textContent, save: localStorage.getItem("aynaghor_save") }; });
 console.log("finish", JSON.stringify(r));
 await close();

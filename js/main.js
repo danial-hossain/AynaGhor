@@ -7,6 +7,7 @@ import { GameAudio } from "./audio.js";
 import { UI } from "./ui.js";
 import { Act1 } from "./act1.js";
 import { Act2 } from "./act2.js";
+import { Intro, Act3 } from "./act3.js";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
@@ -31,6 +32,7 @@ game.save = extra => { try { localStorage.setItem("aynaghor_save", JSON.stringif
 game.loadSave = () => { try { return JSON.parse(localStorage.getItem("aynaghor_save") || "null"); } catch (e) { return null; } };
 game.relock = () => { if (!isTouch && game.running && canvas.requestPointerLock) { try { const p = canvas.requestPointerLock(); if (p && p.catch) p.catch(() => {}); } catch (e) {} } };
 game.setMode = (name, opts) => {
+  if (game.cur && game.cur.leave) game.cur.leave();
   ui.fade(false); ui.prompt(""); ui.objective(""); ui.status(""); ui.matches(null); ui.flame(false);
   for (const b of ["noise", "seen", "wanted"]) ui.bar(b, null);
   game.mode = name; game.cur = game.modes[name]; game.cur.start(opts || {});
@@ -70,6 +72,8 @@ async function boot() {
   };
   game.modes.act1 = new Act1(ctx);
   game.modes.act2 = new Act2(ctx);
+  game.modes.intro = new Intro(ctx);
+  game.modes.act3 = new Act3(ctx);
   game.ctx = ctx;
 
   // ---- menu / pause
@@ -99,6 +103,7 @@ async function boot() {
     $("touch").classList.remove("hidden"); $("help").classList.add("hidden"); setupTouch(player, hud);
     for (const [id, code] of [["btnE", "KeyE"], ["btnF", "KeyF"]]) $(id).addEventListener("touchstart", e => { e.preventDefault(); game.key(code); }, { passive: false });
   }
+  try { const e = JSON.parse(localStorage.getItem("aynaghor_endings") || "[]"); if (e.length) $("endCount").textContent = `দেখা সমাপ্তি: ${String(e.length).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d])}/৫`; } catch (e) {}
   setLoad(1); $("loading").classList.add("hidden"); menu(false);
 
   let last = performance.now(), frames = 0, t0 = last;

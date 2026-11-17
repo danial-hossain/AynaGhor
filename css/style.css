@@ -43,7 +43,7 @@ button.ghost { font: inherit; font-size: 15px; color: #a79f90; background: none;
 #btnRun { bottom: 120px; } #btnCrouch { bottom: 34px; }
 
 #cross { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: rgba(255,255,255,.55); }
-#objective { position: absolute; left: 18px; top: 14px; font-size: 16px; color: #e9c48f; text-shadow: 0 1px 5px #000; max-width: 46%; }
+#objective { position: absolute; left: 18px; top: 14px; font-size: 16px; color: #e9c48f; text-shadow: 0 1px 5px #000; max-width: 46%; line-height: 1.35; max-height: 66px; overflow: hidden; }
 #prompt { position: absolute; left: 50%; top: 57%; transform: translateX(-50%); font-size: 18px; color: #fff; text-shadow: 0 1px 6px #000; white-space: nowrap; }
 #subtitle { position: absolute; left: 50%; bottom: 13%; transform: translateX(-50%); max-width: min(760px, 86%); text-align: center; font-size: 19px; line-height: 1.5;
   color: #f1e7d0; background: rgba(0,0,0,.55); padding: 6px 16px; border-radius: 6px; opacity: 0; transition: opacity .5s; }
@@ -56,7 +56,7 @@ button.ghost { font: inherit; font-size: 15px; color: #a79f90; background: none;
 @keyframes flick { from { transform: scale(1, 1) rotate(-2deg); } to { transform: scale(.93, 1.07) rotate(2deg); } }
 #inv { position: absolute; right: 18px; top: 14px; background: rgba(0,0,0,.6); padding: 8px 14px; border-radius: 6px; font-size: 15px; }
 #inv b { display: block; color: #e9c48f; margin-bottom: 4px; } #inv span { display: block; }
-#meters { position: absolute; left: 18px; top: 48px; display: flex; flex-direction: column; gap: 6px; }
+#meters { position: absolute; left: 18px; top: 84px; display: flex; flex-direction: column; gap: 6px; }
 .meter span { font-size: 13px; color: #cfc6b4; text-shadow: 0 1px 3px #000; } .meter div { margin-top: 2px; }
 #bar_seen i { background: #ff4a3a; } #bar_wanted i { background: #ff4a3a; } #bar_noise i { background: #9fd0ff; }
 #fade { position: fixed; inset: 0; background: #000; opacity: 0; pointer-events: none; transition: opacity 1.2s; z-index: 8; display: flex; align-items: center; justify-content: center; }
