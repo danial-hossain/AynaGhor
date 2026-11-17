@@ -81,3 +81,11 @@ button.ghost { font: inherit; font-size: 15px; color: #a79f90; background: none;
 #diff button { font: inherit; font-size: 14px; color: #a79f90; background: none; border: 1px solid #4a443a; border-radius: 5px; padding: 3px 12px; cursor: pointer; }
 #diff button.on { color: #14100a; background: #e9a45a; border-color: #e9a45a; }
 #btnM { bottom: 34px; right: 108px !important; }
+
+#howto { position: fixed; inset: 0; z-index: 12; background: rgba(4,4,6,.9); display: flex; align-items: center; justify-content: center; overflow: auto; padding: 14px; }
+#howto .sheet { max-width: 860px; width: 100%; background: #14110d; border: 1px solid #4a3f30; border-radius: 10px; padding: 20px 26px; text-align: center; }
+#howto h2 { font-size: 32px; color: #f1e7d0; } #howto .lead { font-size: 16px; color: #cfc6b4; margin: 6px 0 12px; line-height: 1.6; }
+#howto .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 28px; text-align: left; margin-bottom: 16px; }
+#howto h4 { color: #e9a45a; font-size: 17px; margin: 8px 0 3px; } #howto ul { list-style: none; font-size: 15px; color: #b8b0a0; line-height: 1.65; }
+#howto b { color: #f1e7d0; }
+@media (max-width: 640px) { #howto .cols { grid-template-columns: 1fr; } }

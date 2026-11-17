@@ -94,6 +94,11 @@ async function boot() {
   $("btnResume").onclick = () => { go(null); player.enabled = game.wasEnabled && !ui.modal; };
   $("btnNew").onclick = () => { game.state = { proof1: false, proof2: false, prisoner: false, clues: {}, matches: 0 }; go(game.modes.intro ? "intro" : "act1"); };
   $("btnWalk").onclick = () => go("walk");
+  const how = show => { $("howto").classList.toggle("hidden", !show); if (show && game.running) { if (document.pointerLockElement) document.exitPointerLock(); else game.pause(); } };
+  $("btnHelp").onclick = () => how(true); $("howClose").onclick = () => how(false);
+  let seenHow = false; try { seenHow = !!localStorage.getItem("aynaghor_how"); } catch (e) {}
+  const firstNew = $("btnNew").onclick;
+  $("btnNew").onclick = () => { if (!seenHow) { seenHow = true; try { localStorage.setItem("aynaghor_how", "1"); } catch (e) {} how(true); $("howClose").onclick = () => { how(false); $("howClose").onclick = () => how(false); firstNew(); }; } else firstNew(); };
   $("btnContinue").onclick = () => { const s = game.loadSave() || {}; Object.assign(game.state, s); const m = "act" + (s.act || 1); go(game.modes[m] ? m : "act1", { resume: true }); };
   document.addEventListener("pointerlockchange", () => { if (!isTouch && document.pointerLockElement !== canvas && !game.noLock && !ui.modal) game.pause(); });
   game.key = code => {
@@ -105,6 +110,7 @@ async function boot() {
   };
   addEventListener("keydown", e => {
     if (e.code === "F3") { e.preventDefault(); $("debug").classList.toggle("hidden"); }
+    if (e.code === "KeyH" && !ui.modal) $("howto").classList.contains("hidden") ? how(true) : how(false);
     if (!e.repeat) game.key(e.code);
   });
   if (isTouch) {
