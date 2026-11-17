@@ -67,6 +67,12 @@
   </div>
 </div>
 
+<script>
+  // show load-time errors on screen instead of hanging on the loading bar
+  function showErr(m) { var el = document.getElementById("loadText"); if (el && !window.__game?.ready) el.textContent = "সমস্যা: " + m; }
+  addEventListener("error", function (e) { showErr(e.message || (e.target && (e.target.src || e.target.href)) || "অজানা ত্রুটি"); }, true);
+  addEventListener("unhandledrejection", function (e) { showErr(String(e.reason && e.reason.message || e.reason)); });
+</script>
 <script type="module" src="js/main.js"></script>
 </body>
 </html>

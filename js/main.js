@@ -13,7 +13,9 @@ const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
 const isTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
 
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+let renderer;
+try { renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" }); }
+catch (e) { $("loadText").textContent = "এই browser-এ WebGL চালু নেই, তাই game চালানো যাচ্ছে না।"; throw e; }
 const BASE_PR = Math.min(devicePixelRatio || 1, 1.25); let pr = BASE_PR;
 renderer.setPixelRatio(pr);
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
