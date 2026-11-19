@@ -2,8 +2,8 @@ import { open } from "./pw.mjs";
 const { page, shot, close } = await open();
 const ev = (f, a) => page.evaluate(f, a);
 // intro
-let r = await ev(async () => { const g = window.__game; g.start("intro"); const a = g.cur, p = g.player; const s0 = { ...p.pos, blocked: g.collision.blocked(p.pos.x, p.pos.z) }; a.t = 50;
-  for (let i = 0; i < 600 && a.phase < 3; i++) { p.update(0.03); a.update(0.03); } const ph = a.phase; await new Promise(r => setTimeout(r, 10500)); return { s0, ph, mode: g.mode }; });
+let r = await ev(async () => { const g = window.__game; g.start("intro"); const a = g.cur, p = g.player; const s0 = { ...p.pos, blocked: g.collision.blocked(p.pos.x, p.pos.z) }; const idle = (() => { for (let i = 0; i < 2000; i++) a.update(0.03); return a.phase; })(); p.teleport(-11, 17, 0);
+  for (let i = 0; i < 600 && a.phase < 3; i++) { p.update(0.03); a.update(0.03); } const ph = a.phase; await new Promise(r => setTimeout(r, 10500)); return { s0, idle, ph, mode: g.mode }; });
 console.log("intro", JSON.stringify(r));
 r = await ev(() => { const g = window.__game; g.state = { proof1: true, proof2: true, prisoner: true, clues: {}, matches: 2 }; g.setMode("act3"); const a = g.cur, c = g.collision;
   const b = o => c.blocked(o.x, o.z); return { start: a.startPos, sb: b(a.startPos), cafe: [a.cafe.x, a.cafe.z, b(a.cafe)], salon: [a.salon.x, a.salon.z, b(a.salon)], npcs: a.npcs.map(n => [n.id, Math.round(n.pos.x), Math.round(n.pos.z), b(n.pos)]), gMain: a.gMain.length, gAll: a.gAll.length }; });
