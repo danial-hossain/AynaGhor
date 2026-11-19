@@ -1,8 +1,8 @@
 // Intro (the abduction) and Act 3 (Mirpur night: corrupt police patrols, wanted level, allies you may or may not
 // be able to trust, phone tracking, cyber-café upload finale) + the five endings. Both run on the real street map.
 import * as THREE from "three";
-import { figure, walkAnim } from "./act2.js?v=1795085710";
-import { rickshawGeo } from "./props.js?v=1795085710";
+import { figure, walkAnim } from "./act2.js?v=1795115803";
+import { rickshawGeo } from "./props.js?v=1795115803";
 
 const bn = n => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
 const CREDIT = "\n\nমানচিত্রের তথ্য © OpenStreetMap contributors (ODbL)";
@@ -79,7 +79,7 @@ export class Intro extends Street {
   update(dt) {
     const p = this.player, P = this.pickup.position; this.t += dt; this.world.update(dt, this.camera); this.game.landmarks();
     const d = Math.hypot(p.pos.x + 11, p.pos.z - 17);
-    if (this.phase === 0 && d < 30) { this.phase = 1; this.t = 0; this.ui.say("পিলারের আড়ালে একটা পিকআপ… একজন লোক পুলিশের জিপের লোকটার হাতে মোটা একটা ব্যাগ তুলে দিচ্ছে। টাকা?", 5); }
+    if (this.phase === 0 && d < 12) { this.phase = 1; this.t = 0; this.ui.say("পিলারের আড়ালে একটা পিকআপ… একজন লোক পুলিশের জিপের লোকটার হাতে মোটা একটা ব্যাগ তুলে দিচ্ছে। টাকা?", 5); }
     else if (this.phase === 1 && this.t > 4.5) { this.phase = 2; this.t = 0; this.ui.say("ওরা আপনার দিকে তাকাল। পিকআপের ইঞ্জিন চালু হলো।", 4); this.ui.objective("পালান!"); }
     else if (this.phase === 2) {
       const dx = p.pos.x - P.x, dz = p.pos.z - P.z, dd = Math.hypot(dx, dz), sp = 9 + this.t * 2;

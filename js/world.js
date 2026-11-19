@@ -1,6 +1,6 @@
 // Builds the night-time Mirpur 10 scene: city meshes from the GLB, street detail, lights.
 import * as THREE from "three";
-import * as P from "./props.js?v=1795085710";
+import * as P from "./props.js?v=1795115803";
 
 const FOG = 0x0c1018;
 const SHOPS = ["মায়ের দোয়া স্টোর", "বিসমিল্লাহ হোটেল", "ভাই ভাই টেলিকম", "নিউ ঢাকা ফার্মেসি", "মিরপুর বিরিয়ানি হাউস", "আল-আমিন জেনারেল স্টোর",
