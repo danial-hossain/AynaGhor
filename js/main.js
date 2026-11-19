@@ -1,13 +1,13 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { Collision } from "./collision.js?v=1795115803";
-import { Player, setupTouch } from "./player.js?v=1795115803";
-import { buildWorld } from "./world.js?v=1795115803";
-import { GameAudio } from "./audio.js?v=1795115803";
-import { UI } from "./ui.js?v=1795115803";
-import { Act1 } from "./act1.js?v=1795115803";
-import { Act2 } from "./act2.js?v=1795115803";
-import { Intro, Act3, Ambient } from "./act3.js?v=1795115803";
+import { Collision } from "./collision.js?v=1795116672";
+import { Player, setupTouch } from "./player.js?v=1795116672";
+import { buildWorld } from "./world.js?v=1795116672";
+import { GameAudio } from "./audio.js?v=1795116672";
+import { UI } from "./ui.js?v=1795116672";
+import { Act1 } from "./act1.js?v=1795116672";
+import { Act2 } from "./act2.js?v=1795116672";
+import { Intro, Act3, Ambient } from "./act3.js?v=1795116672";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
@@ -48,8 +48,8 @@ async function boot() {
     Promise.all([document.fonts.load('700 64px "Hind Siliguri"', "আয়নাঘর"), document.fonts.load('400 16px "Hind Siliguri"', "আ")]),
     new Promise(r => setTimeout(r, 4000))]);
   const [data, gltf] = await Promise.all([
-    fetch("assets/mirpur.json?v=1795115803").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
-    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb?v=1795115803", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
+    fetch("assets/mirpur.json?v=1795116672").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
+    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb?v=1795116672", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
     fontsReady]);
   setLoad(0.85, "রাস্তা সাজানো হচ্ছে…");
   await new Promise(r => setTimeout(r, 30));

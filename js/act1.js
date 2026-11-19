@@ -2,7 +2,7 @@
 // screwdriver, mirror frame -> ventilation hole. Footsteps event: hide in the dark on the bed.
 import * as THREE from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
-import { Collision } from "./collision.js?v=1795115803";
+import { Collision } from "./collision.js?v=1795116672";
 
 export const bn = n => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
 const W = 2.2, D = 2.0, H = 2.8;                 // room half-width (x), half-depth (z), height
@@ -34,6 +34,7 @@ export class Act1 {
     Object.assign(this, ctx);
     this.scene = new THREE.Scene(); this.scene.background = new THREE.Color(0x000000);
     this.col = new Collision({ bounds: [-W, -D, W, D], margin: 0.4, buildings: [], pillars: [] });
+    this.baseAmb = 0.6;
     this.items = [];          // interactables
     this.build();
   }
@@ -51,11 +52,16 @@ export class Act1 {
     box(W * 2, H, 0.1, mWall, 0, H / 2, -D - 0.05); box(W * 2, H, 0.1, mWall, 0, H / 2, D + 0.05);
     box(0.1, H, D * 2, mWall, -W - 0.05, H / 2, 0); box(0.1, H, D * 2, mWall, W + 0.05, H / 2, 0);
 
-    // faint night glow from a barred ventilator high on the north wall
-    const vent = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.25), new THREE.MeshBasicMaterial({ color: 0x1a2740 })); vent.position.set(-1.2, 2.45, -D + 0.01); s.add(vent);
-    for (let i = -2; i <= 2; i++) box(0.02, 0.25, 0.02, mDark, -1.2 + i * 0.09, 2.45, -D + 0.02);
-    this.ambient = new THREE.AmbientLight(0x35486a, 0.12); s.add(this.ambient);
-    const moon = new THREE.PointLight(0x4a6aa0, 0.25, 5, 1.5); moon.position.set(-1.2, 2.3, -D + 0.4); s.add(moon);
+    // barred window on the north wall: moonlight so the room is readable (the wall writing still needs a match)
+    const WX = -1.2, WY = 1.85;
+    const winPane = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.95), new THREE.MeshBasicMaterial({ color: 0x8fb0e8 })); winPane.position.set(WX, WY, -D + 0.012); s.add(winPane);
+    box(1.05, 0.05, 0.06, mDark, WX, WY + 0.5, -D + 0.03); box(1.05, 0.05, 0.06, mDark, WX, WY - 0.5, -D + 0.03);
+    box(0.05, 1.05, 0.06, mDark, WX - 0.5, WY, -D + 0.03); box(0.05, 1.05, 0.06, mDark, WX + 0.5, WY, -D + 0.03);
+    for (let i = -2; i <= 2; i++) box(0.03, 0.95, 0.03, mDark, WX + i * 0.2, WY, -D + 0.04);
+    box(0.95, 0.03, 0.03, mDark, WX, WY, -D + 0.04);
+    this.ambient = new THREE.AmbientLight(0x4a6290, this.baseAmb); s.add(this.ambient);
+    const moon = new THREE.PointLight(0x7a9ad8, 14, 12, 1.2); moon.position.set(WX, WY - 0.1, -D + 0.5); s.add(moon);
+    const beam = new THREE.SpotLight(0x9ab8f0, 40, 14, 0.9, 0.7, 1); beam.position.set(WX, WY, -D + 0.2); beam.target.position.set(WX + 0.6, 0.0, 1.5); s.add(beam, beam.target);
 
     // door (locked) with a peephole slot
     box(0.95, 2.05, 0.06, L({ color: 0x3a2c20 }), 1.2, 1.025, -D + 0.03); box(0.08, 0.03, 0.05, mMetal, 0.85, 1.0, -D + 0.08);
@@ -102,7 +108,7 @@ export class Act1 {
 
     // code on the east wall, opposite the mirror
     this.codeMat = new THREE.MeshLambertMaterial({ transparent: true, depthWrite: false });
-    const cp = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.86), this.codeMat); cp.position.set(W - 0.01, 1.5, MIRROR_Z); cp.rotation.y = -Math.PI / 2; s.add(cp);
+    const cp = new THREE.Mesh(new THREE.PlaneGeometry(2.3, 0.86), this.codeMat); cp.position.set(W - 0.01, 1.5, MIRROR_Z); cp.rotation.y = -Math.PI / 2; cp.visible = false; this.codePlane = cp; s.add(cp);
     this.codePos = cp.position.clone();
 
     // small props
@@ -240,7 +246,8 @@ export class Act1 {
     const fl = s.lit ? (0.75 + Math.random() * 0.25) * Math.min(1, s.burn / 1.2) * 3.0 : 0;
     this.flame.intensity += (fl - this.flame.intensity) * Math.min(1, dt * 14);
     const f = new THREE.Vector3(0.22, -0.2, -0.35).applyQuaternion(cam.quaternion); this.flame.position.copy(cam.position).add(f);
-    this.ambient.intensity += ((this.lightLevel() === 0.35 ? 0.9 : 0.12) - this.ambient.intensity) * Math.min(1, dt * 0.5);
+    this.ambient.intensity += ((this.lightLevel() === 0.35 ? 1.1 : this.baseAmb) - this.ambient.intensity) * Math.min(1, dt * 0.5);
+    this.codePlane.visible = this.lightLevel() > 0.3;   // the writing is only readable by match light, not by moonlight
     this.ui.flame(s.lit);
 
     s.dark = s.lit ? Math.max(0, (s.dark || 0) - dt * 0.3) : Math.min(1, (s.dark || 0) + dt / 80); this.fear = Math.max(s.dark, s.ev !== "idle" ? 0.95 : 0);
