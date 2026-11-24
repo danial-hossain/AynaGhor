@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <title>আয়নাঘর</title>
-<link rel="stylesheet" href="css/style.css?v=1795116672">
+<link rel="stylesheet" href="css/style.css?v=1795493432">
 <script type="importmap">
 { "imports": {
     "three": "./vendor/three/three.module.min.js",
@@ -27,6 +27,7 @@
     <div id="bar_wanted" class="meter hidden"><span></span><div><i></i></div></div>
   </div>
   <div id="tip"></div>
+  <div id="minimap" class="hidden"><canvas id="miniCanvas" width="360" height="360"></canvas><div id="miniLbl"></div></div>
   <div id="map" class="hidden"><canvas id="mapCanvas" width="720" height="720"></canvas></div>
   <div id="prompt"></div>
   <div id="subtitle"></div>
@@ -66,7 +67,7 @@
           <li><b>C</b> নিচু হয়ে চলা (নিঃশব্দ)</li>
           <li><b>E</b> ধরা, কথা বলা, লুকানো</li>
           <li><b>F</b> দেশলাই · রাস্তায় ফোন</li>
-          <li><b>M</b> মানচিত্র (রাস্তায়)</li>
+          <li><b>M</b> বড় মানচিত্র (রাস্তায়, আপনার অবস্থান সহ)</li><li><b>N</b> ডানদিকের ওপরের মিনি-ম্যাপ চালু/বন্ধ</li>
           <li><b>Tab</b> ব্যাগ ও মিশনের তালিকা · <b>H</b> এই পাতা</li>
         </ul>
         <h4>সাধারণ নিয়ম</h4>
@@ -107,7 +108,7 @@
       <li><b>W A S D</b> হাঁটা</li><li><b>মাউস</b> চারপাশ দেখা</li>
       <li><b>Shift</b> দৌড়</li><li><b>C</b> বসে চলা</li>
       <li><b>E</b> ধরা / কথা বলা</li><li><b>F</b> দেশলাই</li>
-      <li><b>Tab</b> সঙ্গের জিনিস</li><li><b>M</b> মানচিত্র (রাস্তায়)</li>
+      <li><b>Tab</b> সঙ্গের জিনিস</li><li><b>M</b> বড় মানচিত্র (রাস্তায়, আপনার অবস্থান সহ)</li><li><b>N</b> ডানদিকের ওপরের মিনি-ম্যাপ চালু/বন্ধ</li>
     </ul>
     <p id="endCount" class="credit"></p>
     <p class="credit">মানচিত্রের তথ্য © OpenStreetMap contributors (ODbL)</p>
@@ -120,6 +121,6 @@
   addEventListener("error", function (e) { showErr(e.message || (e.target && (e.target.src || e.target.href)) || "অজানা ত্রুটি"); }, true);
   addEventListener("unhandledrejection", function (e) { showErr(String(e.reason && e.reason.message || e.reason)); });
 </script>
-<script type="module" src="js/main.js?v=1795116672"></script>
+<script type="module" src="js/main.js?v=1795493432"></script>
 </body>
 </html>

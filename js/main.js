@@ -1,13 +1,14 @@
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
-import { Collision } from "./collision.js?v=1795116672";
-import { Player, setupTouch } from "./player.js?v=1795116672";
-import { buildWorld } from "./world.js?v=1795116672";
-import { GameAudio } from "./audio.js?v=1795116672";
-import { UI } from "./ui.js?v=1795116672";
-import { Act1 } from "./act1.js?v=1795116672";
-import { Act2 } from "./act2.js?v=1795116672";
-import { Intro, Act3, Ambient } from "./act3.js?v=1795116672";
+import { Collision } from "./collision.js?v=1795493432";
+import { Player, setupTouch } from "./player.js?v=1795493432";
+import { buildWorld } from "./world.js?v=1795493432";
+import { GameAudio } from "./audio.js?v=1795493432";
+import { UI } from "./ui.js?v=1795493432";
+import { Act1 } from "./act1.js?v=1795493432";
+import { Act2 } from "./act2.js?v=1795493432";
+import { Minimap } from "./minimap.js?v=1795493432";
+import { Intro, Act3, Ambient } from "./act3.js?v=1795493432";
 
 const $ = id => document.getElementById(id);
 const canvas = $("c"), overlay = $("overlay"), hud = $("hud");
@@ -48,8 +49,8 @@ async function boot() {
     Promise.all([document.fonts.load('700 64px "Hind Siliguri"', "আয়নাঘর"), document.fonts.load('400 16px "Hind Siliguri"', "আ")]),
     new Promise(r => setTimeout(r, 4000))]);
   const [data, gltf] = await Promise.all([
-    fetch("assets/mirpur.json?v=1795116672").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
-    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb?v=1795116672", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
+    fetch("assets/mirpur.json?v=1795493432").then(r => { if (!r.ok) throw new Error("mirpur.json " + r.status); return r.json(); }),
+    new Promise((res, rej) => new GLTFLoader().load("assets/mirpur.glb?v=1795493432", res, e => { if (e.total) setLoad(0.1 + 0.7 * e.loaded / e.total); }, rej)),
     fontsReady]);
   setLoad(0.85, "রাস্তা সাজানো হচ্ছে…");
   await new Promise(r => setTimeout(r, 30));
@@ -80,6 +81,7 @@ async function boot() {
   game.modes.intro = new Intro(ctx);
   game.modes.act3 = new Act3(ctx);
   game.ambient = new Ambient(ctx, game.modes.act3.gAll);
+  const mini = new Minimap(data, $("minimap"), $("miniCanvas"), $("miniLbl"), { low: isTouch }); game.mini = mini;
   game.modes.walk.mapMarks = game.modes.intro.mapMarks = () => [];
   game.diff = 1; try { game.diff = +localStorage.getItem("aynaghor_diff") || 1; } catch (e) {}
   const dbtn = [...document.querySelectorAll("#diff button")], setDiff = d => { game.diff = d; dbtn.forEach(b => b.classList.toggle("on", +b.dataset.d === d)); try { localStorage.setItem("aynaghor_diff", d); } catch (e) {} };
@@ -109,7 +111,8 @@ async function boot() {
     if (!game.running) return;
     if (ui.keys) { ui.keys(code); return; }
     if (code === "Tab") ui.toggleInv();
-    if (code === "KeyM") { if (game.cur && game.cur.mapMarks) ui.toggleMap(data, game.cur.mapMarks()); else ui.say("এখানে মানচিত্র কোনো কাজে আসবে না।"); }
+    if (code === "KeyN" && game.cur === game.modes.act3) { const on = mini.toggle(); ui.toast(on ? "মিনি-ম্যাপ চালু" : "মিনি-ম্যাপ বন্ধ"); return; }
+    if (code === "KeyM") { if (game.cur && game.cur.mapMarks) ui.toggleMap(data, game.cur.mapMarks(), { x: player.pos.x, z: player.pos.z, yaw: player.yaw }); else ui.say("এখানে মানচিত্র কোনো কাজে আসবে না।"); }
     if (game.cur && game.cur.onKey) game.cur.onKey(code);
   };
   addEventListener("keydown", e => {
@@ -137,6 +140,7 @@ async function boot() {
       player.update(game.running ? dt : 0);
       if (game.running) { cur.update(dt); ui.tick(dt); if (cur.scene === scene) game.ambient.update(dt); }
       else world.update(dt, camera);
+      if (game.running && cur === game.modes.act3 && cur.st && !cur.st.over) { mini.show(true); mini.draw(player, cur.mapMarks(), cur); } else mini.show(false);
       const fear = cur.fear || 0;
       if (fear > 0.45) { const a = (fear - 0.45) * 0.02; camera.rotation.x += (Math.random() - 0.5) * a; camera.rotation.y += (Math.random() - 0.5) * a; }
     }

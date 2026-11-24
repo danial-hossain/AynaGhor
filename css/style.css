@@ -118,3 +118,9 @@ button.ghost { font: inherit; font-size: 15px; color: #a79f90; background: none;
   #help { display: none; } .credit { margin-top: 8px; } button.big { font-size: 17px; padding: 7px 26px; }
   #howto { align-items: flex-start; } #howto .sheet { padding: 12px 16px; } #howto h2 { font-size: 22px; } #howto .lead { font-size: 13px; margin: 4px 0 6px; } #howto ul { font-size: 13px; line-height: 1.5; } #howto h4 { font-size: 14px; margin: 5px 0 2px; }
 }
+
+/* live minimap */
+#minimap { position: absolute; right: 16px; top: 14px; width: 190px; pointer-events: none; text-align: center; filter: drop-shadow(0 2px 8px #000); }
+#minimap canvas { display: block; width: 190px; height: 190px; border-radius: 50%; background: rgba(8,12,18,.55); }
+#miniLbl { margin-top: 4px; font-size: 13px; color: #ffb0a0; text-shadow: 0 1px 4px #000; min-height: 18px; }
+@media (pointer: coarse) { #minimap { right: 10px; top: 56px; width: 128px; } #minimap canvas { width: 128px; height: 128px; } #miniLbl { font-size: 11px; } }

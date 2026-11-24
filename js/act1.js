@@ -2,7 +2,7 @@
 // screwdriver, mirror frame -> ventilation hole. Footsteps event: hide in the dark on the bed.
 import * as THREE from "three";
 import { Reflector } from "three/addons/objects/Reflector.js";
-import { Collision } from "./collision.js?v=1795116672";
+import { Collision } from "./collision.js?v=1795493432";
 
 export const bn = n => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]);
 const W = 2.2, D = 2.0, H = 2.8;                 // room half-width (x), half-depth (z), height

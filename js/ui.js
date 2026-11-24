@@ -12,7 +12,7 @@ export class UI {
   say(text, sec = 4) { $("subtitle").textContent = text; $("subtitle").classList.add("show"); this.sayT = sec; }
   tip(text, sec = 8) { $("tip").textContent = text; $("tip").classList.add("show"); this.tipT = sec; }
   /** Hand-drawn paper map: streets and landmarks, but never the player's own position. */
-  toggleMap(data, marks) {
+  toggleMap(data, marks, me) {
     const el = $("map"); if (!el.classList.contains("hidden") || !data) { el.classList.add("hidden"); return; }
     const c = $("mapCanvas"), g = c.getContext("2d"), S = 720, R = 360, X = x => x + R, Y = z => z + R;
     g.fillStyle = "#d8c8a2"; g.fillRect(0, 0, S, S);
@@ -31,8 +31,10 @@ export class UI {
       if (m.cross) { g.beginPath(); g.moveTo(x - 8, y - 8); g.lineTo(x + 8, y + 8); g.moveTo(x + 8, y - 8); g.lineTo(x - 8, y + 8); g.stroke(); } else { g.beginPath(); g.arc(x, y, 6, 0, 7); g.stroke(); }
       g.fillStyle = "rgba(216,200,162,.8)"; const w = g.measureText(m.t).width; g.fillRect(x - w / 2 - 3, y + 10, w + 6, 24); g.fillStyle = m.c || "#3a1208"; g.fillText(m.t, x, y + 28);
     }
+    if (me) { g.save(); g.translate(X(me.x), Y(me.z)); g.rotate(-me.yaw); g.fillStyle = "#1a4fd0"; g.strokeStyle = "#fff"; g.lineWidth = 2; g.beginPath(); g.moveTo(0, -16); g.lineTo(11, 12); g.lineTo(0, 5); g.lineTo(-11, 12); g.closePath(); g.fill(); g.stroke(); g.restore();
+      g.fillStyle = "#1a4fd0"; g.font = '700 21px "Hind Siliguri", sans-serif'; g.textAlign = "center"; g.fillText("আপনি এখানে", X(me.x), Y(me.z) + 34); }
     g.fillStyle = "#3a1208"; g.font = '700 26px "Hind Siliguri", sans-serif'; g.fillText("উ", 676, 60); g.beginPath(); g.moveTo(676, 14); g.lineTo(668, 34); g.lineTo(684, 34); g.fill();
-    g.font = '400 15px "Hind Siliguri", sans-serif'; g.fillText("(আপনি কোথায় আছেন, তা নিজেকেই বুঝে নিতে হবে)", 360, 706);
+    g.font = '400 15px "Hind Siliguri", sans-serif'; g.fillText("(নীল তীরটি আপনি, তীরের মুখ আপনার সামনের দিক)", 360, 706);
     el.classList.remove("hidden");
   }
   toast(text) { $("toast").textContent = text; $("toast").classList.add("show"); this.toastT = 3.5; }
